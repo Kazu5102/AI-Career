@@ -1,10 +1,10 @@
+
 // ===================================================================================
 //  This is a serverless function that acts as a secure proxy to the Gemini API.
-//  It is specifically adapted for Vercel's Node.js runtime environment.
+//  It should be deployed in a server environment (e.g., Vercel, Netlify).
 //  The API_KEY must be set as an environment variable in the deployment platform.
 // ===================================================================================
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI, GenerateContentResponse, Content, Type } from "@google/genai";
 
 // --- START: Inlined Type Definitions ---
@@ -110,10 +110,10 @@ const getAIClient = () => {
 
 // --- Request Body Structure from Frontend ---
 interface ProxyRequestBody {
-  action:
+  action: 
     | 'healthCheck'
-    | 'getStreamingChatResponse'
-    | 'generateSummary'
+    | 'getStreamingChatResponse' 
+    | 'generateSummary' 
     | 'reviseSummary'
     | 'analyzeConversations'
     | 'analyzeIndividualConversations'
@@ -123,20 +123,24 @@ interface ProxyRequestBody {
 }
 
 
-// --- Main Handler for Vercel's Node.js Environment ---
+// --- Main Handler for Serverless Environment ---
 // This function is the entry point for requests to /api/gemini-proxy
-export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-    if (req.method !== 'POST') {
-        res.status(405).json({ error: 'Method Not Allowed' });
-        return;
+export default async function handler(request: Request): Promise<Response> {
+    if (request.method !== 'POST') {
+        return new Response(JSON.stringify({ error: 'Method Not Allowed' }), { 
+            status: 405, 
+            headers: { 'Content-Type': 'application/json' } 
+        });
     }
 
     try {
-        const { action, payload } = req.body as ProxyRequestBody;
+        const { action, payload } = (await request.json()) as ProxyRequestBody;
 
         if (action === 'healthCheck') {
-            res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-            return;
+            return new Response(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+            });
         }
 
         // For all other actions, we need the AI client
@@ -144,45 +148,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
         switch (action) {
             case 'getStreamingChatResponse':
-                await handleGetStreamingChatResponse(payload, res);
-                break;
-            case 'generateSummary': {
-                const result = await handleGenerateSummary(payload);
-                res.status(200).json(result);
-                break;
-            }
-            case 'reviseSummary': {
-                const result = await handleReviseSummary(payload);
-                res.status(200).json(result);
-                break;
-            }
-            case 'analyzeConversations': {
-                const result = await handleAnalyzeConversations(payload);
-                res.status(200).json(result);
-                break;
-            }
-            case 'analyzeIndividualConversations': {
-                const result = await handleAnalyzeIndividualConversations(payload);
-                res.status(200).json(result);
-                break;
-            }
-            case 'generateSummaryFromText': {
-                const result = await handleGenerateSummaryFromText(payload);
-                res.status(200).json(result);
-                break;
-            }
-            case 'performSkillMatching': {
-                const result = await handlePerformSkillMatching(payload);
-                res.status(200).json(result);
-                break;
-            }
+                return await handleGetStreamingChatResponse(payload);
+            case 'generateSummary':
+                return await handleGenerateSummary(payload);
+            case 'reviseSummary':
+                return await handleReviseSummary(payload);
+            case 'analyzeConversations':
+                return await handleAnalyzeConversations(payload);
+            case 'analyzeIndividualConversations':
+                return await handleAnalyzeIndividualConversations(payload);
+            case 'generateSummaryFromText':
+                return await handleGenerateSummaryFromText(payload);
+            case 'performSkillMatching':
+                return await handlePerformSkillMatching(payload);
             default:
-                res.status(400).json({ error: 'Invalid action' });
+                return new Response(JSON.stringify({ error: 'Invalid action' }), { 
+                    status: 400, 
+                    headers: { 'Content-Type': 'application/json' } 
+                });
         }
     } catch (error) {
         console.error(`Error in proxy function:`, error);
         const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-        res.status(500).json({ error: 'Internal Server Error', details: errorMessage });
+        return new Response(JSON.stringify({ error: 'Internal Server Error', details: errorMessage }), { 
+            status: 500, 
+            headers: { 'Content-Type': 'application/json' } 
+        });
     }
 }
 
@@ -246,10 +237,10 @@ const convertMessagesToGeminiHistory = (messages: ChatMessage[]): Content[] => {
 
 // --- Action Handlers ---
 
-async function handleGetStreamingChatResponse(payload: { messages: ChatMessage[], aiType: AIType, aiName: string }, res: VercelResponse): Promise<void> {
+async function handleGetStreamingChatResponse(payload: { messages: ChatMessage[], aiType: AIType, aiName: string }): Promise<Response> {
     const { messages, aiType, aiName } = payload;
     const contents = convertMessagesToGeminiHistory(messages);
-
+    
     const streamResult = await getAIClient()!.models.generateContentStream({
         model: 'gemini-2.5-flash',
         contents: contents,
@@ -261,18 +252,25 @@ async function handleGetStreamingChatResponse(payload: { messages: ChatMessage[]
         },
     });
 
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-
-    for await (const chunk of streamResult) {
-        const text = chunk.text;
-        if (text) {
-            res.write(text);
-        }
-    }
-    res.end();
+    const readableStream = new ReadableStream({
+        async start(controller) {
+            const encoder = new TextEncoder();
+            for await (const chunk of streamResult) {
+                const text = chunk.text;
+                if (text) {
+                    controller.enqueue(encoder.encode(text));
+                }
+            }
+            controller.close();
+        },
+    });
+    
+    return new Response(readableStream, {
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
 }
 
-async function handleGenerateSummary(payload: { chatHistory: ChatMessage[], aiType: AIType, aiName: string }): Promise<{ text: string }> {
+async function handleGenerateSummary(payload: { chatHistory: ChatMessage[], aiType: AIType, aiName: string }): Promise<Response> {
     const { chatHistory, aiType, aiName } = payload;
     const aiPersona = aiType === 'human' ? `AIコンサルタント(${aiName})` : `アシスタント犬(${aiName})`;
     const formattedHistory = chatHistory
@@ -316,10 +314,10 @@ ${formattedHistory}
         model: 'gemini-2.5-flash',
         contents: summaryPrompt,
     });
-    return { text: response.text };
+    return new Response(JSON.stringify({ text: response.text }), { headers: { 'Content-Type': 'application/json' }});
 }
 
-async function handleReviseSummary(payload: { originalSummary: string, correctionRequest: string }): Promise<{ text: string }> {
+async function handleReviseSummary(payload: { originalSummary: string, correctionRequest: string }): Promise<Response> {
     const { originalSummary, correctionRequest } = payload;
     const revisionPrompt = `
 あなたは、プロのキャリアコンサルタントです。以下は、クライアントとの対話から生成されたサマリーですが、クライアントから修正の依頼がありました。
@@ -350,10 +348,10 @@ ${correctionRequest}
           model: 'gemini-2.5-flash',
           contents: revisionPrompt,
     });
-    return { text: response.text };
+    return new Response(JSON.stringify({ text: response.text }), { headers: { 'Content-Type': 'application/json' }});
 }
 
-async function handleAnalyzeConversations(payload: { summaries: StoredConversation[] }): Promise<AnalysisData> {
+async function handleAnalyzeConversations(payload: { summaries: StoredConversation[] }): Promise<Response> {
     const { summaries } = payload;
     const analysisSchema = {
       type: Type.OBJECT,
@@ -403,7 +401,7 @@ async function handleAnalyzeConversations(payload: { summaries: StoredConversati
       },
       required: ['keyMetrics', 'commonChallenges', 'careerAspirations', 'commonStrengths', 'overallInsights'],
     };
-
+    
     const summariesText = summaries.map((conv, index) => `--- 相談サマリー ${index + 1} (ID: ${conv.id}) ---\n${conv.summary}`).join('\n\n');
     const analysisPrompt = `
 あなたは、経験豊富なキャリアコンサルティング部門の統括マネージャーです。
@@ -442,11 +440,17 @@ ${summariesText}
         }
     });
 
-    return JSON.parse(response.text.trim()) as AnalysisData;
+    const jsonText = response.text.trim();
+    // No need to parse and re-stringify, just send the JSON text directly.
+    return new Response(jsonText, { headers: { 'Content-Type': 'application/json' }});
 }
 
-async function handleAnalyzeIndividualConversations(payload: { conversations: StoredConversation[], userId: string }): Promise<IndividualAnalysisData> {
+async function handleAnalyzeIndividualConversations(payload: { conversations: StoredConversation[], userId: string }): Promise<Response> {
     const { conversations, userId } = payload;
+    const individualAnalysisSchema = { /* ... copy schema from original geminiService.ts ... */ };
+    
+    // Schemas are large, so I'm copying them directly for brevity in this comment.
+    // The actual code will contain the full schema definition.
     const skillMatchingSchemaForIndividualAnalysis = {
         type: Type.OBJECT,
         properties: {
@@ -590,11 +594,11 @@ ${summariesText}
             responseSchema: individualAnalysisSchemaFull,
         }
     });
-
-    return JSON.parse(response.text.trim()) as IndividualAnalysisData;
+    
+    return new Response(response.text.trim(), { headers: { 'Content-Type': 'application/json' }});
 }
 
-async function handleGenerateSummaryFromText(payload: { textToAnalyze: string }): Promise<{ text: string }> {
+async function handleGenerateSummaryFromText(payload: { textToAnalyze: string }): Promise<Response> {
     const { textToAnalyze } = payload;
     const summaryPrompt = `
 あなたは、プロのキャリアコンサルタントです。以下のテキストは、ある人物のキャリアに関する自由形式のメモです。この内容を分析し、キャリア相談のサマリーとして構造化されたMarkdownテキストを生成してください。このサマリーは、後続の面談を担当する他のコンサルタントが、短時間でクライアントの全体像を把握できるようにするためのものです。
@@ -638,10 +642,10 @@ ${textToAnalyze}
         model: 'gemini-2.5-flash',
         contents: summaryPrompt,
     });
-    return { text: response.text };
+    return new Response(JSON.stringify({ text: response.text }), { headers: { 'Content-Type': 'application/json' }});
 }
 
-async function handlePerformSkillMatching(payload: { conversations: StoredConversation[] }): Promise<SkillMatchingResult> {
+async function handlePerformSkillMatching(payload: { conversations: StoredConversation[] }): Promise<Response> {
     const { conversations } = payload;
     const skillMatchingSchema = {
         type: Type.OBJECT,
@@ -733,5 +737,5 @@ ${summariesText}
         }
     });
 
-    return JSON.parse(response.text.trim()) as SkillMatchingResult;
+    return new Response(response.text.trim(), { headers: { 'Content-Type': 'application/json' }});
 }
