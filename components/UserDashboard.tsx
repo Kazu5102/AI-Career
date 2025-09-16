@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { StoredConversation, SkillMatchingResult } from '../types';
 import ConversationDetailModal from './ConversationDetailModal';
 import SkillMatchingModal from './SkillMatchingModal';
-import { performSkillMatching } from '../services/geminiService';
+import { performSkillMatching } from '../services/index';
 import TargetIcon from './icons/TargetIcon';
 
 

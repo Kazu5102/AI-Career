@@ -1,7 +1,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChatMessage, MessageAuthor, StoredConversation, StoredData, STORAGE_VERSION, AIType } from '../types';
-import { getStreamingChatResponse, generateSummary, reviseSummary } from '../services/geminiService';
+import { getStreamingChatResponse, generateSummary, reviseSummary } from '../services/index';
 import Header from '../components/Header';
 import ChatWindow from '../components/ChatWindow';
 import ChatInput from '../components/ChatInput';

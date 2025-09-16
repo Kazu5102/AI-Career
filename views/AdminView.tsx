@@ -1,8 +1,10 @@
 
 
+
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { StoredConversation, StoredData, STORAGE_VERSION, AnalysisData, IndividualAnalysisData } from '../types';
-import { analyzeConversations, generateSummaryFromText, analyzeIndividualConversations } from '../services/geminiService';
+import { analyzeConversations, generateSummaryFromText, analyzeIndividualConversations } from '../services/index';
 import { setPassword } from '../services/authService';
 import ConversationDetailModal from '../components/ConversationDetailModal';
 import AnalysisDisplay from '../components/AnalysisDisplay';

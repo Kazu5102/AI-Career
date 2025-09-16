@@ -4,7 +4,7 @@ import UserView from './views/UserView';
 import AdminView from './views/AdminView';
 import PasswordModal from './components/PasswordModal';
 import { checkPassword } from './services/authService';
-import { checkServerStatus } from './services/geminiService';
+import { checkServerStatus } from './services/index';
 
 type AppMode = 'user' | 'admin';
 type ServerStatus = 'checking' | 'ok' | 'error';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StoredConversation, AnalysisData } from '../types';
-import { analyzeConversations } from '../services/geminiService';
+import { analyzeConversations } from '../services/index';
 import ConversationDetailModal from '../components/ConversationDetailModal';
 import AnalyticsIcon from '../components/icons/AnalyticsIcon';
 import AnalysisDisplay from '../components/AnalysisDisplay';
