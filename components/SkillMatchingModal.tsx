@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { marked } from 'marked';
 import { SkillMatchingResult } from '../types';
@@ -122,7 +123,7 @@ const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 transition-opacity duration-300" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <header className="p-5 border-b border-slate-200 flex justify-between items-center flex-shrink-0">
+        <header className="p-4 sm:p-5 border-b border-slate-200 flex justify-between items-center flex-shrink-0">
           <div className="flex items-center gap-3">
             <TargetIcon className="w-6 h-6 text-sky-600"/>
             <h2 className="text-xl font-bold text-slate-800">適性診断・スキルマッチング レポート</h2>
@@ -134,7 +135,7 @@ const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose
           </button>
         </header>
         
-        <div className="p-6 flex-1 overflow-y-auto">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
           {renderContent()}
         </div>
 

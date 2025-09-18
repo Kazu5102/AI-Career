@@ -12,7 +12,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ isConsultationReady, onConsultClick, showBackButton, onBackClick }) => {
   
   return (
-    <header className="w-full bg-white shadow-md p-4 border-b border-slate-200">
+    <header className="w-full bg-white shadow-md p-3 sm:p-4 border-b border-slate-200">
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           {showBackButton && (
@@ -38,13 +38,13 @@ const Header: React.FC<HeaderProps> = ({ isConsultationReady, onConsultClick, sh
           </div>
         </div>
 
-        <div className="min-w-[170px] text-right">
+        <div className="text-right">
           {isConsultationReady && (
             <button 
               onClick={onConsultClick}
-              className="px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-opacity-75 transition-all duration-200 animate-pulse"
+              className="px-3 py-2 text-sm sm:px-4 sm:text-base bg-emerald-500 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-opacity-75 transition-all duration-200 animate-pulse"
             >
-              相談内容を要約する
+              <span className="hidden sm:inline">相談内容を</span>要約する
             </button>
           )}
         </div>

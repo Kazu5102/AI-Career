@@ -57,10 +57,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat 
 
   return (
     <>
-      <div className="w-full max-w-4xl h-full flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 overflow-hidden">
+      <div className="w-full max-w-4xl h-full flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 sm:p-6 overflow-hidden">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-200">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-800">
               あなたの相談履歴
             </h1>
              <p className="text-sm text-slate-500 mt-1">過去の相談内容を確認したり、総合的な適性診断ができます。</p>

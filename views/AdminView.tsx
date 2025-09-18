@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { StoredConversation, StoredData, STORAGE_VERSION, AnalysisData, IndividualAnalysisData } from '../types';
 import { analyzeConversations, generateSummaryFromText, analyzeIndividualConversations } from '../services/index';
@@ -367,11 +364,11 @@ const AdminView: React.FC = () => {
         style={{ display: 'none' }}
         disabled={isImporting}
       />
-      <div className="w-full max-w-7xl mx-auto h-full flex gap-6 bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 overflow-hidden my-6">
+      <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 sm:p-6 my-6">
         {/* Left Panel: History */}
-        <aside className="w-1/3 flex flex-col border-r border-slate-200 pr-6">
+        <aside className="w-full lg:w-1/3 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-200 pb-6 lg:pb-0 lg:pr-6">
           <h2 className="text-lg font-bold text-slate-800 mb-4">相談者ごとの履歴 ({Object.keys(groupedConversations).length}名)</h2>
-          <div className="flex-1 overflow-y-auto -mr-6 pr-6 space-y-2">
+          <div className="overflow-y-auto -mr-4 sm:-mr-6 pr-4 sm:pr-6 space-y-2 max-h-80 lg:max-h-none lg:flex-1">
             {Object.keys(groupedConversations).length > 0 ? (
                 Object.entries(groupedConversations).map(([userId, userConvs]) => (
                   <div key={userId} className="rounded-lg bg-slate-50 overflow-hidden border border-slate-200">
@@ -432,7 +429,7 @@ const AdminView: React.FC = () => {
           </div>
           <div className="mt-auto pt-4 border-t border-slate-200 space-y-3">
               <h3 className="text-sm font-semibold text-slate-600 px-1">データ管理</h3>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                   <button
                       onClick={handleImportClick}
                       disabled={isAnalyzingAnything}
@@ -496,19 +493,20 @@ const AdminView: React.FC = () => {
         </aside>
 
         {/* Right Panel: Analysis */}
-        <main className="w-2/3 flex flex-col">
-          <div className="flex justify-between items-center mb-4">
+        <main className="w-full lg:w-2/3 flex flex-col">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
             <div>
                 <h2 className="text-lg font-bold text-slate-800">
                     {analyzedUserId ? '個別分析レポート' : '総合分析レポート'}
                 </h2>
                 {analyzedUserId && <p className="text-sm text-slate-500 truncate" title={analyzedUserId}>相談者ID: {analyzedUserId}</p>}
             </div>
+            <div className="w-full sm:w-auto">
             {analyzedUserId ? (
                 <button
                     onClick={handleBackToComprehensive}
                     disabled={isAnalyzingAnything}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white font-semibold rounded-lg shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center w-full gap-2 px-4 py-2 bg-slate-600 text-white font-semibold rounded-lg shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
                 >
                     総合分析に戻る
                 </button>
@@ -516,12 +514,13 @@ const AdminView: React.FC = () => {
                 <button
                     onClick={handleRunAnalysis}
                     disabled={isAnalyzingAnything || conversations.length < 2}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-opacity-75 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center w-full gap-2 px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-opacity-75 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
                 >
                     <AnalyticsIcon />
                     {isAnalyzing ? '分析中...' : '総合分析を実行'}
                 </button>
             )}
+            </div>
           </div>
           <div className="flex-1 bg-slate-50 rounded-lg p-6 overflow-y-auto">
               {(isAnalyzing || isAnalyzingIndividual || isImporting) ? (
