@@ -145,14 +145,14 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ data }) => {
 
                     <CSSTransition nodeRef={individualConsultationsRef} timeout={500} classNames="fade-up" appear={true} key="ind-consultation-list">
                         <div ref={individualConsultationsRef}>
-                            <ConsultationList consultations={individualData.consultations} />
+                            <ConsultationList consultations={individualData.consultations || []} />
                         </div>
                     </CSSTransition>
 
                     <CSSTransition nodeRef={useRef(null)} timeout={500} classNames="fade-up" appear={true} key="ind-themes">
                         <InfoListCard
                             title="キーテーマ"
-                            items={individualData.keyThemes}
+                            items={individualData.keyThemes || []}
                             icon={<ChatIcon />}
                             iconBgColor="bg-sky-100"
                             iconColor="text-sky-600"
@@ -162,7 +162,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ data }) => {
                     <CSSTransition nodeRef={useRef(null)} timeout={500} classNames="fade-up" appear={true} key="ind-strengths">
                        <InfoListCard
                             title="検出された強み"
-                            items={individualData.detectedStrengths}
+                            items={individualData.detectedStrengths || []}
                             icon={<TrendingUpIcon />}
                             iconBgColor="bg-emerald-100"
                             iconColor="text-emerald-600"
@@ -171,7 +171,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ data }) => {
                      <CSSTransition nodeRef={useRef(null)} timeout={500} classNames="fade-up" appear={true} key="ind-dev-areas">
                        <InfoListCard
                             title="今後の成長領域"
-                            items={individualData.areasForDevelopment}
+                            items={individualData.areasForDevelopment || []}
                             icon={<EditIcon />}
                             iconBgColor="bg-amber-100"
                             iconColor="text-amber-600"
@@ -180,7 +180,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ data }) => {
                      <CSSTransition nodeRef={useRef(null)} timeout={500} classNames="fade-up" appear={true} key="ind-next-steps">
                        <InfoListCard
                             title="提案される次のステップ"
-                            items={individualData.suggestedNextSteps}
+                            items={individualData.suggestedNextSteps || []}
                             icon={<CheckIcon />}
                             iconBgColor="bg-violet-100"
                             iconColor="text-violet-600"
@@ -211,7 +211,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ data }) => {
                                         <h3 className="text-lg font-bold text-slate-800">推奨される職種</h3>
                                     </div>
                                     <div className="space-y-4">
-                                        {individualData.skillMatchingResult.recommendedRoles.map(role => (
+                                        {(individualData.skillMatchingResult.recommendedRoles || []).map(role => (
                                             <div key={role.role} className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
                                                 <div className="flex justify-between items-start gap-4">
                                                     <h4 className="font-bold text-md text-sky-800">{role.role}</h4>
@@ -237,7 +237,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ data }) => {
                                         <h3 className="text-lg font-bold text-slate-800">伸ばすと良いスキル</h3>
                                     </div>
                                     <div className="space-y-3">
-                                        {individualData.skillMatchingResult.skillsToDevelop.map(skill => (
+                                        {(individualData.skillMatchingResult.skillsToDevelop || []).map(skill => (
                                             <div key={skill.skill} className="bg-slate-50 p-3 rounded-lg">
                                                 <h4 className="font-semibold text-emerald-800">{skill.skill}</h4>
                                                 <p className="text-sm text-slate-600">{skill.reason}</p>
@@ -254,7 +254,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ data }) => {
                                         <h3 className="text-lg font-bold text-slate-800">おすすめ学習リソース</h3>
                                     </div>
                                     <div className="space-y-2">
-                                        {individualData.skillMatchingResult.learningResources.map(resource => (
+                                        {(individualData.skillMatchingResult.learningResources || []).map(resource => (
                                         <a href={resource.url} target="_blank" rel="noopener noreferrer" key={resource.title} className="block bg-slate-50 p-3 rounded-lg hover:bg-slate-100 hover:shadow-sm transition-all border border-slate-200 group">
                                             <div className="flex items-center justify-between">
                                             <h4 className="font-semibold text-violet-800 group-hover:underline">{resource.title}</h4>
@@ -274,13 +274,13 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ data }) => {
                                     </div>
                                     <p className="text-sm text-yellow-700 mb-4">クライアントには直接提示されていない、潜在的な可能性や長期的な視点です。</p>
                                     <div className="space-y-3">
-                                        {individualData.hiddenSkills.map(skill => (
+                                        {(individualData.hiddenSkills || []).map(skill => (
                                             <div key={skill.skill} className="bg-white/70 p-3 rounded-lg">
                                                 <h4 className="font-semibold text-yellow-900">{skill.skill}</h4>
                                                 <p className="text-sm text-slate-600">{skill.reason}</p>
                                             </div>
                                         ))}
-                                        {individualData.hiddenSkills.length === 0 && <p className="text-sm text-slate-500">特筆すべき隠れたスキルはありませんでした。</p>}
+                                        {(!individualData.hiddenSkills || individualData.hiddenSkills.length === 0) && <p className="text-sm text-slate-500">特筆すべき隠れたスキルはありませんでした。</p>}
                                     </div>
                                 </div>
                             </CSSTransition>
@@ -313,17 +313,17 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ data }) => {
                 <CSSTransition nodeRef={metricsRef} timeout={500} classNames="fade-down" appear={true} key="metrics">
                     <div ref={metricsRef} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <MetricCard title="総相談件数" value={comprehensiveData.keyMetrics.totalConsultations} icon={<BarChartIcon />} />
-                        <MetricCard title="主な業界" value={comprehensiveData.keyMetrics.commonIndustries.length > 0 ? comprehensiveData.keyMetrics.commonIndustries[0] : 'N/A'} subValue={comprehensiveData.keyMetrics.commonIndustries} icon={<TrendingUpIcon />} />
+                        <MetricCard title="主な業界" value={(comprehensiveData.keyMetrics.commonIndustries || [])[0] || 'N/A'} subValue={comprehensiveData.keyMetrics.commonIndustries || []} icon={<TrendingUpIcon />} />
                     </div>
                 </CSSTransition>
 
                 {/* Charts */}
                 <CSSTransition nodeRef={chartsRef} timeout={500} classNames="fade-up" appear={true}
                     // Using a key makes it re-trigger animation on data change
-                    key={comprehensiveData.commonChallenges.map(c => c.label).join(',')}>
+                    key={(comprehensiveData.commonChallenges || []).map(c => c.label).join(',')}>
                     <div ref={chartsRef} className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                        <ChartSection title="共通の悩み・課題" data={comprehensiveData.commonChallenges} icon={<PieChartIcon />} />
-                        <ChartSection title="キャリアにおける希望" data={comprehensiveData.careerAspirations} icon={<PieChartIcon />} />
+                        <ChartSection title="共通の悩み・課題" data={comprehensiveData.commonChallenges || []} icon={<PieChartIcon />} />
+                        <ChartSection title="キャリアにおける希望" data={comprehensiveData.careerAspirations || []} icon={<PieChartIcon />} />
                     </div>
                 </CSSTransition>
                 
@@ -332,7 +332,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ data }) => {
                     <div ref={strengthsRef} className="bg-white p-6 rounded-xl shadow-md transition-all hover:shadow-lg">
                         <h3 className="text-lg font-bold text-slate-800 mb-4">相談者によく見られる強み</h3>
                         <div className="flex flex-wrap gap-2">
-                            {comprehensiveData.commonStrengths.map(strength => (
+                            {(comprehensiveData.commonStrengths || []).map(strength => (
                                 <span key={strength} className="bg-emerald-100 text-emerald-800 text-sm font-medium px-3 py-1 rounded-full">
                                     {strength}
                                 </span>
