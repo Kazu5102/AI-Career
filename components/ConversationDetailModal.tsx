@@ -23,7 +23,7 @@ const ConversationDetailModal: React.FC<ConversationDetailModalProps> = ({ conve
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 transition-opacity duration-300" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <header className="p-4 sm:p-5 border-b border-slate-200 flex justify-between items-center">
+        <header className="p-5 border-b border-slate-200 flex justify-between items-center">
           <div>
             <h2 className="text-xl font-bold text-slate-800">相談履歴の詳細</h2>
             <p className="text-sm text-slate-500">{formatDate(conversation.date)} (担当AI: {conversation.aiName})</p>
@@ -35,7 +35,7 @@ const ConversationDetailModal: React.FC<ConversationDetailModalProps> = ({ conve
           </button>
         </header>
         
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8">
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
           <div>
               <h3 className="text-lg font-bold text-slate-800 border-b pb-2 mb-4">相談サマリー</h3>
               <div className="bg-sky-50 p-4 sm:p-6 rounded-lg border border-sky-100 mt-4">

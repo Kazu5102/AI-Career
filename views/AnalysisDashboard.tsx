@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StoredConversation, AnalysisData } from '../types';
 import { analyzeConversations } from '../services/index';
 import ConversationDetailModal from '../components/ConversationDetailModal';
@@ -10,11 +10,35 @@ interface Props {
   onNewChat: () => void;
 }
 
+const loadingMessages = [
+    'AIが総合分析を開始しました...',
+    '全相談データを読み込んでいます...',
+    '全体の傾向を抽出中です。これには数分かかる場合があります。',
+    'インサイトをまとめています...',
+    'レポートを生成しています。もうしばらくお待ちください。'
+];
+
 const AnalysisDashboard: React.FC<Props> = ({ conversations, onNewChat }) => {
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<StoredConversation | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState(loadingMessages[0]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isAnalyzing) {
+        let messageIndex = 0;
+        interval = setInterval(() => {
+            messageIndex = (messageIndex + 1) % loadingMessages.length;
+            setLoadingMessage(loadingMessages[messageIndex]);
+        }, 4000);
+    }
+    return () => {
+        if (interval) clearInterval(interval);
+    };
+  }, [isAnalyzing]);
+
 
   const handleRunAnalysis = async () => {
     if (conversations.length < 2) {
@@ -24,6 +48,7 @@ const AnalysisDashboard: React.FC<Props> = ({ conversations, onNewChat }) => {
     setIsAnalyzing(true);
     setAnalysisData(null);
     setError(null);
+    setLoadingMessage(loadingMessages[0]);
     try {
       const result = await analyzeConversations(conversations);
       setAnalysisData(result);
@@ -48,11 +73,11 @@ const AnalysisDashboard: React.FC<Props> = ({ conversations, onNewChat }) => {
 
   return (
     <>
-      <div className="w-full max-w-6xl h-full flex gap-6 bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 overflow-hidden">
+      <div className="w-full max-w-6xl flex flex-col lg:flex-row gap-6 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 md:p-6 lg:h-full lg:overflow-hidden">
         {/* Left Panel: History */}
-        <aside className="w-1/3 flex flex-col border-r border-slate-200 pr-6">
+        <aside className="w-full lg:w-1/3 flex flex-col lg:border-r lg:border-slate-200 lg:pr-6">
           <h2 className="text-lg font-bold text-slate-800 mb-4">過去の相談履歴 ({conversations.length}件)</h2>
-          <div className="flex-1 overflow-y-auto -mr-6 pr-6 space-y-2">
+          <div className="flex-1 overflow-y-auto -mr-6 pr-6 space-y-2 max-h-60 lg:max-h-none">
             {conversations.length > 0 ? (
                 [...conversations].reverse().map(conv => (
                   <button 
@@ -86,7 +111,7 @@ const AnalysisDashboard: React.FC<Props> = ({ conversations, onNewChat }) => {
         </aside>
 
         {/* Right Panel: Analysis */}
-        <main className="w-2/3 flex flex-col">
+        <main className="w-full lg:w-2/3 flex flex-col mt-6 lg:mt-0">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-bold text-slate-800">総合分析レポート</h2>
             <button
@@ -100,10 +125,10 @@ const AnalysisDashboard: React.FC<Props> = ({ conversations, onNewChat }) => {
           </div>
           <div className="flex-1 bg-slate-50 rounded-lg p-6 overflow-y-auto">
               {isAnalyzing ? (
-                  <div className="flex flex-col items-center justify-center h-full text-slate-600">
+                  <div className="flex flex-col items-center justify-center h-full text-slate-600 text-center">
                       <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                      <p className="font-semibold">AIが過去の相談内容を分析しています...</p>
-                      <p className="text-sm text-slate-500">全体の傾向をまとめています。しばらくお待ちください。</p>
+                      <p className="font-semibold">{loadingMessage}</p>
+                      <p className="text-sm text-slate-500 mt-2">これはプレビュー用のデモです。</p>
                   </div>
               ) : error ? (
                   <div className="flex flex-col items-center justify-center h-full text-center text-red-500 bg-red-50 p-4 rounded-lg">

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChatMessage, MessageAuthor, StoredConversation, StoredData, STORAGE_VERSION, AIType } from '../types';
 import { getStreamingChatResponse, generateSummary, reviseSummary } from '../services/index';
@@ -307,7 +308,7 @@ const UserView: React.FC = () => {
 
 
   return (
-    <div className="flex flex-col h-full bg-slate-100">
+    <div className={`flex flex-col bg-slate-100 ${view === 'chatting' ? 'h-full' : 'min-h-full'}`}>
       {view === 'chatting' && (
         <Header 
           isConsultationReady={isConsultationReady}
@@ -316,7 +317,7 @@ const UserView: React.FC = () => {
           onBackClick={handleBackToDashboard}
         />
       )}
-      <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 overflow-hidden">
+      <main className={`flex-1 flex flex-col items-center ${view === 'chatting' ? 'p-4 md:p-6 justify-center overflow-hidden' : 'p-0 sm:p-4 md:p-6 justify-start'}`}>
         {renderContent()}
       </main>
       

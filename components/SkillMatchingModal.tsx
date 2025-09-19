@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { marked } from 'marked';
 import { SkillMatchingResult } from '../types';
 import BriefcaseIcon from './icons/BriefcaseIcon';
@@ -15,6 +14,15 @@ interface SkillMatchingModalProps {
   error: string | null;
 }
 
+const loadingMessages = [
+    "AIがあなたのキャリアを分析中です...",
+    "過去の相談内容から強みを抽出しています...",
+    "あなたの価値観と興味を分析しています...",
+    "最適な職種とのマッチングを行っています...",
+    "これには1分ほどかかる場合があります。",
+    "レポートを生成しています。もうしばらくお待ちください..."
+];
+
 const createMarkup = (markdownText: string | undefined) => {
     if (!markdownText) return { __html: '' };
     const rawMarkup = marked.parse(markdownText, { breaks: true, gfm: true }) as string;
@@ -22,6 +30,23 @@ const createMarkup = (markdownText: string | undefined) => {
 };
 
 const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose, result, isLoading, error }) => {
+  const [loadingMessage, setLoadingMessage] = useState(loadingMessages[0]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isOpen && isLoading) {
+        let messageIndex = 0;
+        setLoadingMessage(loadingMessages[0]);
+        interval = setInterval(() => {
+            messageIndex = (messageIndex + 1) % loadingMessages.length;
+            setLoadingMessage(loadingMessages[messageIndex]);
+        }, 3500); // Change message every 3.5 seconds
+    }
+    return () => {
+        if (interval) clearInterval(interval);
+    };
+  }, [isOpen, isLoading]);
+
 
   if (!isOpen) return null;
   
@@ -30,8 +55,7 @@ const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose
       return (
         <div className="flex flex-col items-center justify-center h-full text-slate-600 p-8 text-center">
           <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-          <p className="text-lg font-semibold">AIがあなたのキャリアを分析中です...</p>
-          <p className="text-sm text-slate-500 mt-2">過去の相談内容からあなたの強みや適性を診断しています。<br/>これには1分ほどかかる場合があります。</p>
+          <p className="text-lg font-semibold">{loadingMessage}</p>
         </div>
       );
     }
@@ -123,7 +147,7 @@ const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 transition-opacity duration-300" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <header className="p-4 sm:p-5 border-b border-slate-200 flex justify-between items-center flex-shrink-0">
+        <header className="p-5 border-b border-slate-200 flex justify-between items-center flex-shrink-0">
           <div className="flex items-center gap-3">
             <TargetIcon className="w-6 h-6 text-sky-600"/>
             <h2 className="text-xl font-bold text-slate-800">適性診断・スキルマッチング レポート</h2>
@@ -135,7 +159,7 @@ const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose
           </button>
         </header>
         
-        <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
+        <div className="p-6 flex-1 overflow-y-auto">
           {renderContent()}
         </div>
 

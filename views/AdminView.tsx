@@ -1,4 +1,9 @@
 
+
+
+
+
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { StoredConversation, StoredData, STORAGE_VERSION, AnalysisData, IndividualAnalysisData } from '../types';
 import { analyzeConversations, generateSummaryFromText, analyzeIndividualConversations } from '../services/index';
@@ -16,6 +21,21 @@ interface GroupedConversations {
     [userId: string]: StoredConversation[];
 }
 
+const comprehensiveLoadingMessages = [
+    'AIが総合分析を開始しました...',
+    '全相談データを読み込んでいます...',
+    '全体の傾向を抽出中です。これには数分かかる場合があります。',
+    'インサイトをまとめています...',
+    'レポートを生成しています。もうしばらくお待ちください。'
+];
+
+const individualLoadingMessages = [
+    'AIが個別分析を開始しました...',
+    '相談内容の時系列変化を分析中です...',
+    '強みと成長領域を特定しています...',
+    'レポートを作成しています。もうしばらくお待ちください。'
+];
+
 const AdminView: React.FC = () => {
   const [conversations, setConversations] = useState<StoredConversation[]>([]);
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
@@ -32,6 +52,7 @@ const AdminView: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordMessage, setPasswordMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState('');
 
 
   useEffect(() => {
@@ -105,6 +126,25 @@ const AdminView: React.FC = () => {
         setError(`履歴データの読み込みに失敗しました。データが破損している可能性があります: ${err.message}`);
     }
   }, []);
+  
+  const isAnalyzingAnything = isAnalyzing || isAnalyzingIndividual || isImporting;
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isAnalyzing || isAnalyzingIndividual) {
+        const messages = isAnalyzingIndividual ? individualLoadingMessages : comprehensiveLoadingMessages;
+        let messageIndex = 0;
+        setLoadingMessage(messages[messageIndex]);
+        interval = setInterval(() => {
+            messageIndex = (messageIndex + 1) % messages.length;
+            setLoadingMessage(messages[messageIndex]);
+        }, 4000);
+    }
+    return () => {
+        if (interval) clearInterval(interval);
+    };
+  }, [isAnalyzing, isAnalyzingIndividual]);
+
 
   const groupedConversations = useMemo<GroupedConversations>(() => {
     return conversations.reduce((acc, conv) => {
@@ -352,10 +392,8 @@ const AdminView: React.FC = () => {
     }
   };
 
-  const isAnalyzingAnything = isAnalyzing || isAnalyzingIndividual || isImporting;
-
   return (
-    <>
+    <div className="h-full w-full overflow-y-auto">
       <input
         type="file"
         ref={fileInputRef}
@@ -364,11 +402,11 @@ const AdminView: React.FC = () => {
         style={{ display: 'none' }}
         disabled={isImporting}
       />
-      <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 sm:p-6 my-6">
+      <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 md:p-6 my-4 md:my-6 lg:h-[calc(100vh-theme(space.12))] lg:my-6">
         {/* Left Panel: History */}
-        <aside className="w-full lg:w-1/3 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-200 pb-6 lg:pb-0 lg:pr-6">
+        <aside className="w-full lg:w-1/3 flex flex-col lg:border-r lg:border-slate-200 lg:pr-6">
           <h2 className="text-lg font-bold text-slate-800 mb-4">相談者ごとの履歴 ({Object.keys(groupedConversations).length}名)</h2>
-          <div className="overflow-y-auto -mr-4 sm:-mr-6 pr-4 sm:pr-6 space-y-2 max-h-80 lg:max-h-none lg:flex-1">
+          <div className="flex-1 overflow-y-auto -mr-6 pr-6 space-y-2 lg:max-h-none">
             {Object.keys(groupedConversations).length > 0 ? (
                 Object.entries(groupedConversations).map(([userId, userConvs]) => (
                   <div key={userId} className="rounded-lg bg-slate-50 overflow-hidden border border-slate-200">
@@ -429,7 +467,7 @@ const AdminView: React.FC = () => {
           </div>
           <div className="mt-auto pt-4 border-t border-slate-200 space-y-3">
               <h3 className="text-sm font-semibold text-slate-600 px-1">データ管理</h3>
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex gap-2">
                   <button
                       onClick={handleImportClick}
                       disabled={isAnalyzingAnything}
@@ -493,20 +531,19 @@ const AdminView: React.FC = () => {
         </aside>
 
         {/* Right Panel: Analysis */}
-        <main className="w-full lg:w-2/3 flex flex-col">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+        <main className="w-full lg:w-2/3 flex flex-col mt-6 lg:mt-0">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-4">
             <div>
                 <h2 className="text-lg font-bold text-slate-800">
                     {analyzedUserId ? '個別分析レポート' : '総合分析レポート'}
                 </h2>
                 {analyzedUserId && <p className="text-sm text-slate-500 truncate" title={analyzedUserId}>相談者ID: {analyzedUserId}</p>}
             </div>
-            <div className="w-full sm:w-auto">
             {analyzedUserId ? (
                 <button
                     onClick={handleBackToComprehensive}
                     disabled={isAnalyzingAnything}
-                    className="flex items-center justify-center w-full gap-2 px-4 py-2 bg-slate-600 text-white font-semibold rounded-lg shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white font-semibold rounded-lg shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
                 >
                     総合分析に戻る
                 </button>
@@ -514,22 +551,21 @@ const AdminView: React.FC = () => {
                 <button
                     onClick={handleRunAnalysis}
                     disabled={isAnalyzingAnything || conversations.length < 2}
-                    className="flex items-center justify-center w-full gap-2 px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-opacity-75 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-opacity-75 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
                 >
                     <AnalyticsIcon />
                     {isAnalyzing ? '分析中...' : '総合分析を実行'}
                 </button>
             )}
-            </div>
           </div>
           <div className="flex-1 bg-slate-50 rounded-lg p-6 overflow-y-auto">
               {(isAnalyzing || isAnalyzingIndividual || isImporting) ? (
-                  <div className="flex flex-col items-center justify-center h-full text-slate-600">
+                  <div className="flex flex-col items-center justify-center h-full text-slate-600 text-center">
                       <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-4"></div>
                       <p className="font-semibold">
-                        {isImporting ? 'インポートデータを処理中です...' : isAnalyzingIndividual ? 'AIが個別分析を生成しています...' : 'AIが総合分析を生成しています...'}
+                        {isImporting ? 'インポートデータを処理中です...' : loadingMessage}
                       </p>
-                      <p className="text-sm text-slate-500">しばらくお待ちください。</p>
+                      <p className="text-sm text-slate-500 mt-2">しばらくお待ちください。</p>
                   </div>
               ) : error ? (
                   <div className="flex flex-col items-center justify-center h-full text-center text-red-500 bg-red-50 p-4 rounded-lg">
@@ -558,7 +594,7 @@ const AdminView: React.FC = () => {
             onClose={() => setSelectedConversation(null)}
         />
       )}
-    </>
+    </div>
   );
 };
 

@@ -2,11 +2,12 @@
 import { ChatMessage, StoredConversation, AnalysisData, AIType, IndividualAnalysisData, SkillMatchingResult } from '../types';
 
 const PROXY_API_ENDPOINT = '/api/gemini-proxy'; // The serverless function endpoint
+const ANALYSIS_TIMEOUT = 300000; // 5 minutes for long-running tasks
 
 // Helper function to handle fetch requests and errors
-async function fetchFromProxy(action: string, payload: any, isStreaming: boolean = false): Promise<any> {
+async function fetchFromProxy(action: string, payload: any, isStreaming: boolean = false, timeout: number = 20000): Promise<any> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20-second timeout
+    const timeoutId = setTimeout(() => controller.abort(), timeout); // Use dynamic timeout
 
     try {
         const response = await fetch(PROXY_API_ENDPOINT, {
@@ -109,7 +110,7 @@ export const reviseSummary = async (originalSummary: string, correctionRequest: 
 
 export const analyzeConversations = async (summaries: StoredConversation[]): Promise<AnalysisData> => {
     try {
-        return await fetchFromProxy('analyzeConversations', { summaries });
+        return await fetchFromProxy('analyzeConversations', { summaries }, false, ANALYSIS_TIMEOUT);
     } catch (error) {
         console.error("Error generating analysis:", error);
         throw new Error(`総合分析APIの呼び出しに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
@@ -118,7 +119,7 @@ export const analyzeConversations = async (summaries: StoredConversation[]): Pro
 
 export const analyzeIndividualConversations = async (conversations: StoredConversation[], userId: string): Promise<IndividualAnalysisData> => {
     try {
-        return await fetchFromProxy('analyzeIndividualConversations', { conversations, userId });
+        return await fetchFromProxy('analyzeIndividualConversations', { conversations, userId }, false, ANALYSIS_TIMEOUT);
     } catch (error) {
         console.error("Error generating individual analysis:", error);
         throw new Error(`個別分析APIの呼び出しに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
@@ -137,7 +138,7 @@ export const generateSummaryFromText = async (textToAnalyze: string): Promise<st
 
 export const performSkillMatching = async (conversations: StoredConversation[]): Promise<SkillMatchingResult> => {
     try {
-        return await fetchFromProxy('performSkillMatching', { conversations });
+        return await fetchFromProxy('performSkillMatching', { conversations }, false, ANALYSIS_TIMEOUT);
     } catch (error) {
         console.error("Error generating skill matching analysis:", error);
         throw new Error(`スキルマッチングAPIの呼び出しに失敗しました: ${error instanceof Error ? error.message : String(error)}`);

@@ -175,7 +175,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
           </button>
         </div>
       )}
-      <form onSubmit={handleSubmit} className="flex items-center gap-2 sm:gap-3">
+      <form onSubmit={handleSubmit} className="flex items-center gap-3">
         <input
           type="text"
           value={text}
@@ -189,7 +189,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
           type="button"
           onClick={handleMicClick}
           disabled={isLoading || isEditing}
-          className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full text-white flex items-center justify-center transition-colors duration-200 ${
+          className={`flex-shrink-0 w-12 h-12 rounded-full text-white flex items-center justify-center transition-colors duration-200 ${
             isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-sky-600 hover:bg-sky-700'
           } disabled:bg-slate-400 disabled:cursor-not-allowed`}
           title={micError || (isListening ? '録音を停止' : '音声入力')}
@@ -198,8 +198,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
         </button>
         <button
           type="submit"
-          disabled={isLoading || !text.trim() || isListening}
-          className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center transition-colors duration-200 hover:bg-emerald-600 disabled:bg-slate-400 disabled:cursor-not-allowed"
+          disabled={isLoading || !text.trim()}
+          className="flex-shrink-0 w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center transition-colors duration-200 hover:bg-emerald-600 disabled:bg-slate-400 disabled:cursor-not-allowed"
           aria-label={isEditing ? '編集を保存' : 'メッセージを送信'}
         >
           {isEditing ? <SaveIcon /> : <SendIcon />}

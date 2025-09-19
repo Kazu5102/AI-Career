@@ -3,6 +3,21 @@
 //  It is specifically adapted for Vercel's Node.js runtime environment.
 //  The API_KEY must be set as an environment variable in the deployment platform.
 // ===================================================================================
+//
+// NOTE FOR DEPLOYMENT:
+// For long-running analysis tasks, the Vercel function timeout may need to be increased.
+// On a Vercel Pro plan, you can configure this in `vercel.json`:
+// {
+//   "functions": {
+//     "api/gemini-proxy.ts": {
+//       "maxDuration": 300
+//     }
+//   }
+// }
+// This sets the timeout to 5 minutes (300 seconds).
+// On the Hobby plan, the timeout is limited (e.g., 10-15s), so large analyses may fail.
+// ===================================================================================
+
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI, GenerateContentResponse, Content, Type } from "@google/genai";

@@ -58,7 +58,7 @@ const SummaryModal: React.FC<SummaryModalProps> = ({ isOpen, onClose, summary, i
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 transition-opacity duration-300" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <header className="p-4 sm:p-5 border-b border-slate-200 flex justify-between items-center">
+        <header className="p-5 border-b border-slate-200 flex justify-between items-center">
           <h2 className="text-xl font-bold text-slate-800">{isEditing ? 'サマリーの修正依頼' : '相談内容のサマリー'}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -67,7 +67,7 @@ const SummaryModal: React.FC<SummaryModalProps> = ({ isOpen, onClose, summary, i
           </button>
         </header>
         
-        <div className="p-4 sm:p-6 flex-1 overflow-y-auto">
+        <div className="p-6 flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-600">
                <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -111,7 +111,7 @@ const SummaryModal: React.FC<SummaryModalProps> = ({ isOpen, onClose, summary, i
           )}
         </div>
 
-        <footer className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 rounded-b-2xl">
+        <footer className="p-5 bg-slate-50 border-t border-slate-200 rounded-b-2xl">
            {isEditing ? (
              <div className="flex gap-4">
                <button
@@ -131,8 +131,8 @@ const SummaryModal: React.FC<SummaryModalProps> = ({ isOpen, onClose, summary, i
              </div>
            ) : (
             <div className="flex flex-col gap-4">
-              <p className="text-sm text-slate-600 text-left">内容を確認し、必要であれば修正を依頼できます。問題なければ「確定」ボタンで相談を完了してください。</p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <p className="text-sm text-slate-600">内容を確認し、必要であれば修正を依頼できます。問題なければ「確定」ボタンで相談を完了してください。</p>
+              <div className="flex gap-4">
                 <button
                   onClick={() => setIsEditing(true)}
                   disabled={isLoading}

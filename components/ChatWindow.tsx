@@ -27,7 +27,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, onEditMess
   }
 
   return (
-    <div ref={scrollRef} className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
+    <div ref={scrollRef} className="flex-1 p-6 space-y-6 overflow-y-auto">
       {messages.map((msg, index) => {
         const isLastMessage = index === messages.length - 1;
         const isAiThinking = isLastMessage && msg.author === MessageAuthor.AI && isLoading;

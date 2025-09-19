@@ -57,10 +57,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat 
 
   return (
     <>
-      <div className="w-full max-w-4xl h-full flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 sm:p-6 overflow-hidden">
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 md:p-6 my-4 md:my-6">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-200">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-800">
+            <h1 className="text-2xl font-bold text-slate-800">
               あなたの相談履歴
             </h1>
              <p className="text-sm text-slate-500 mt-1">過去の相談内容を確認したり、総合的な適性診断ができます。</p>
@@ -83,7 +83,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat 
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pt-4 -mr-6 pr-6 -ml-6 pl-6">
+        <main className="pt-4">
           {conversations.length > 0 ? (
             <div className="space-y-2">
               {[...conversations].reverse().map(conv => (
@@ -98,7 +98,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat 
               ))}
             </div>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 p-4 rounded-lg bg-slate-50">
+            <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 p-4 rounded-lg bg-slate-50 min-h-[300px]">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-slate-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
