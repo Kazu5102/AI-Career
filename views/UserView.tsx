@@ -1,5 +1,3 @@
-
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChatMessage, MessageAuthor, StoredConversation, StoredData, STORAGE_VERSION, AIType } from '../types';
 import { getStreamingChatResponse, generateSummary, reviseSummary } from '../services/index';
@@ -10,17 +8,7 @@ import SummaryModal from '../components/SummaryModal';
 import AIAvatar from '../components/AIAvatar';
 import AvatarSelectionView from './AvatarSelectionView';
 import UserDashboard from '../components/UserDashboard';
-
-const nameMap = {
-  human_female_1: ['佐藤 さくら', '高橋 あかり', '鈴木 陽菜'],
-  human_male_1: ['伊藤 健太', '渡辺 拓也', '田中 誠'],
-  human_female_2: ['加藤 美咲', '吉田 理恵', '山田 優子'],
-  human_male_2: ['中村 翔太', '小林 大輔', '斎藤 蓮'],
-  dog_shiba_1: ['ポチ', 'ハチ', 'コタロウ'],
-  dog_poodle_1: ['ココ', 'モモ', 'マロン'],
-  dog_corgi_1: ['チャチャ', 'レオ', 'ソラ'],
-  dog_retriever_1: ['マックス', 'ラッキー', 'リク'],
-};
+import { ASSISTANTS } from '../config/aiAssistants';
 
 const getUserId = (): string => {
     let userId = localStorage.getItem('careerConsultingUserId');
@@ -85,21 +73,27 @@ const UserView: React.FC = () => {
 
   const handleAvatarSelected = useCallback((selection: { type: AIType, avatarKey: string }) => {
     const { type, avatarKey } = selection;
+    const assistant = ASSISTANTS.find(a => a.id === avatarKey);
+    if (!assistant) {
+      console.error("Selected assistant not found in config");
+      return;
+    }
+
     setIsLoading(true);
     setAiType(type);
     setAiAvatarKey(avatarKey);
 
-    const names = nameMap[avatarKey as keyof typeof nameMap] || nameMap.dog_shiba_1;
-    const randomName = names[Math.floor(Math.random() * names.length)];
+    const names = assistant.nameOptions;
+    const selectedName = names[Math.floor(Math.random() * names.length)];
+    setAiName(selectedName);
     
     let initialMessage = '';
     if (type === 'human') {
-        initialMessage = `こんにちは。AIキャリアコンサルタントの${randomName}です。本日はどのようなご相談でしょうか？あなたのキャリアについて、じっくりお話を伺わせてください。`;
+        initialMessage = `こんにちは。AIキャリアコンサルタントの${selectedName}です。本日はどのようなご相談でしょうか？あなたのキャリアについて、じっくりお話を伺わせてください。`;
     } else { // dog
-        initialMessage = `こんにちは、ワン！ ボクはキャリア相談が得意なアシスタント犬の${randomName}です。あなたのキャリアについて、一緒にお話ししよう！まず、あなたのことを少し教えてくれる？`;
+        initialMessage = `こんにちは、ワン！ ボクはキャリア相談が得意なアシスタント犬の${selectedName}です。あなたのキャリアについて、一緒にお話ししよう！まず、あなたのことを少し教えてくれる？`;
     }
     
-    setAiName(randomName);
     setMessages([{ author: MessageAuthor.AI, text: initialMessage }]);
     setIsConsultationReady(false);
     setEditingState(null);

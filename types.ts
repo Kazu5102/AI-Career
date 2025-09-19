@@ -1,3 +1,6 @@
+
+import type React from 'react';
+
 export const STORAGE_VERSION = 1;
 
 export interface StoredData {
@@ -26,6 +29,16 @@ export interface StoredConversation {
   messages: ChatMessage[];
   summary: string;
   date: string;
+}
+
+// FIX: Added AIAssistant interface to resolve a type error in config/aiAssistants.ts.
+export interface AIAssistant {
+  id: string;
+  type: AIType;
+  title: string;
+  nameOptions: string[];
+  description: string;
+  avatarComponent: React.ReactElement;
 }
 
 // Types for structured analysis

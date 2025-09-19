@@ -1,21 +1,20 @@
-
-
-
-
-
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { StoredConversation, StoredData, STORAGE_VERSION, AnalysisData, IndividualAnalysisData } from '../types';
+import { StoredConversation, StoredData, STORAGE_VERSION, AnalysisData, IndividualAnalysisData, AIAssistant } from '../types';
 import { analyzeConversations, generateSummaryFromText, analyzeIndividualConversations } from '../services/index';
 import { setPassword } from '../services/authService';
 import ConversationDetailModal from '../components/ConversationDetailModal';
 import AnalysisDisplay from '../components/AnalysisDisplay';
+import AddTextModal from '../components/AddTextModal';
+import ShareReportModal from '../components/ShareReportModal';
 import AnalyticsIcon from '../components/icons/AnalyticsIcon';
 import TrashIcon from '../components/icons/TrashIcon';
 import ImportIcon from '../components/icons/ImportIcon';
 import ExportIcon from '../components/icons/ExportIcon';
 import ChevronDownIcon from '../components/icons/ChevronDownIcon';
 import KeyIcon from '../components/icons/KeyIcon';
+import PlusCircleIcon from '../components/icons/PlusCircleIcon';
+import ShareIcon from '../components/icons/ShareIcon';
+import { ASSISTANTS } from '../config/aiAssistants';
 
 interface GroupedConversations {
     [userId: string]: StoredConversation[];
@@ -48,6 +47,10 @@ const AdminView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const [analyzedUserId, setAnalyzedUserId] = useState<string | null>(null);
+  
+  const [isAddTextModalOpen, setIsAddTextModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [userToShare, setUserToShare] = useState<{userId: string; conversations: StoredConversation[]} | null>(null);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -392,8 +395,23 @@ const AdminView: React.FC = () => {
     }
   };
 
+   const handleAddFromText = (newConversation: StoredConversation) => {
+      const updatedConversations = [...conversations, newConversation];
+      updateConversations(updatedConversations);
+      setIsAddTextModalOpen(false);
+      alert(`相談者ID: ${newConversation.userId} に新しい履歴が追加されました。`);
+    };
+
+    const handleShareReport = (userId: string) => {
+        const userConvs = groupedConversations[userId];
+        if (userConvs) {
+            setUserToShare({ userId, conversations: userConvs });
+            setIsShareModalOpen(true);
+        }
+    };
+    
   return (
-    <div className="h-full w-full overflow-y-auto">
+    <>
       <input
         type="file"
         ref={fileInputRef}
@@ -402,72 +420,109 @@ const AdminView: React.FC = () => {
         style={{ display: 'none' }}
         disabled={isImporting}
       />
-      <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 md:p-6 my-4 md:my-6 lg:h-[calc(100vh-theme(space.12))] lg:my-6">
+      <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 md:p-6 lg:h-full lg:overflow-hidden">
         {/* Left Panel: History */}
         <aside className="w-full lg:w-1/3 flex flex-col lg:border-r lg:border-slate-200 lg:pr-6">
-          <h2 className="text-lg font-bold text-slate-800 mb-4">相談者ごとの履歴 ({Object.keys(groupedConversations).length}名)</h2>
-          <div className="flex-1 overflow-y-auto -mr-6 pr-6 space-y-2 lg:max-h-none">
-            {Object.keys(groupedConversations).length > 0 ? (
-                Object.entries(groupedConversations).map(([userId, userConvs]) => (
-                  <div key={userId} className="rounded-lg bg-slate-50 overflow-hidden border border-slate-200">
-                    <button
-                        onClick={() => toggleUserGroup(userId)}
-                        className="w-full flex justify-between items-center text-left p-3 hover:bg-slate-100 transition-colors duration-150"
-                        aria-expanded={expandedUsers.has(userId)}
-                    >
-                        <div className="flex-1 overflow-hidden pr-2">
-                            <p className="font-semibold text-slate-800 text-sm truncate" title={userId}>
-                                {userId.startsWith('user_unknown_') ? '不明な相談者' : '相談者ID'}
-                            </p>
-                            <p className="text-xs text-slate-500 truncate" title={userId}>
-                                {userId.startsWith('user_unknown_') ? `ID: ...${userId.slice(-6)}` : userId}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="text-xs font-mono bg-slate-200 text-slate-600 px-2 py-1 rounded-full">{userConvs.length}件</span>
-                            <ChevronDownIcon className={`w-5 h-5 text-slate-500 transition-transform duration-200 ${expandedUsers.has(userId) ? 'rotate-180' : ''}`} />
-                        </div>
-                    </button>
-                    {expandedUsers.has(userId) && (
-                        <div className="p-2 border-t border-slate-200 bg-white space-y-1">
-                          {userConvs.map(conv => (
-                              <div key={conv.id} className="group relative w-full text-left p-3 rounded-lg hover:bg-slate-100 transition-colors duration-150 focus-within:outline-none focus-within:ring-2 focus-within:ring-sky-500">
-                                  <div onClick={() => setSelectedConversation(conv)} className="cursor-pointer pr-8">
-                                      <p className="font-semibold text-slate-700 text-sm">{formatDate(conv.date)}</p>
-                                      <p className="text-xs text-slate-500">担当AI: {conv.aiName} ({conv.aiType === 'human' ? '人間' : '犬'})</p>
-                                  </div>
-                                  <button
-                                      onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv.id); }}
-                                      aria-label={`相談履歴 ${conv.id} を削除`}
-                                      className="absolute top-1/2 -translate-y-1/2 right-1 p-2 rounded-full text-slate-400 hover:bg-red-100 hover:text-red-600 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200"
-                                  >
-                                      <TrashIcon className="w-4 h-4" />
-                                  </button>
-                              </div>
-                          ))}
-                          <div className="pt-2">
+          <div className="flex-1 overflow-y-auto -mr-6 pr-6 space-y-6 lg:max-h-none">
+            <section>
+                <h2 className="text-lg font-bold text-slate-800 mb-4">相談者ごとの履歴 ({Object.keys(groupedConversations).length}名)</h2>
+                <div className="space-y-2">
+                    {Object.keys(groupedConversations).length > 0 ? (
+                        Object.entries(groupedConversations).map(([userId, userConvs]) => (
+                        <div key={userId} className="rounded-lg bg-slate-50 overflow-hidden border border-slate-200">
                             <button
-                                onClick={() => handleRunIndividualAnalysis(userId)}
-                                disabled={isAnalyzingAnything}
-                                className="w-full text-sm text-center px-3 py-1.5 bg-sky-100 text-sky-700 font-semibold rounded-md hover:bg-sky-200 transition-colors disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                onClick={() => toggleUserGroup(userId)}
+                                className="w-full flex justify-between items-center text-left p-3 hover:bg-slate-100 transition-colors duration-150"
+                                aria-expanded={expandedUsers.has(userId)}
                             >
-                                この相談者を分析
+                                <div className="flex-1 overflow-hidden pr-2">
+                                    <p className="font-semibold text-slate-800 text-sm truncate" title={userId}>
+                                        {userId.startsWith('user_unknown_') || userId.startsWith('user_imported_') ? 'インポート/不明' : '相談者ID'}
+                                    </p>
+                                    <p className="text-xs text-slate-500 truncate" title={userId}>
+                                        {userId}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                    <span className="text-xs font-mono bg-slate-200 text-slate-600 px-2 py-1 rounded-full">{userConvs.length}件</span>
+                                    <ChevronDownIcon className={`w-5 h-5 text-slate-500 transition-transform duration-200 ${expandedUsers.has(userId) ? 'rotate-180' : ''}`} />
+                                </div>
                             </button>
-                          </div>
+                            {expandedUsers.has(userId) && (
+                                <div className="p-2 border-t border-slate-200 bg-white space-y-1">
+                                {userConvs.map(conv => (
+                                    <div key={conv.id} className="group relative w-full text-left p-3 rounded-lg hover:bg-slate-100 transition-colors duration-150 focus-within:outline-none focus-within:ring-2 focus-within:ring-sky-500">
+                                        <div onClick={() => setSelectedConversation(conv)} className="cursor-pointer pr-8">
+                                            <p className="font-semibold text-slate-700 text-sm">{formatDate(conv.date)}</p>
+                                            <p className="text-xs text-slate-500">担当AI: {conv.aiName} ({conv.aiType === 'human' ? '人間' : '犬'})</p>
+                                        </div>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv.id); }}
+                                            aria-label={`相談履歴 ${conv.id} を削除`}
+                                            className="absolute top-1/2 -translate-y-1/2 right-1 p-2 rounded-full text-slate-400 hover:bg-red-100 hover:text-red-600 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200"
+                                        >
+                                            <TrashIcon className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                                <div className="pt-2 flex gap-2">
+                                    <button
+                                        onClick={() => handleRunIndividualAnalysis(userId)}
+                                        disabled={isAnalyzingAnything}
+                                        className="w-full text-sm text-center px-3 py-1.5 bg-sky-100 text-sky-700 font-semibold rounded-md hover:bg-sky-200 transition-colors disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed"
+                                    >
+                                        この相談者を分析
+                                    </button>
+                                    <button
+                                        onClick={() => handleShareReport(userId)}
+                                        disabled={isAnalyzingAnything}
+                                        className="w-full text-sm text-center px-3 py-1.5 bg-emerald-100 text-emerald-700 font-semibold rounded-md hover:bg-emerald-200 transition-colors disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                                    >
+                                        <ShareIcon className="w-4 h-4" />
+                                        共有レポート作成
+                                    </button>
+                                </div>
+                                </div>
+                            )}
                         </div>
+                        ))
+                    ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 p-4 rounded-lg bg-slate-50">
+                        <p>保存された相談履歴はありません。</p>
+                        <p className="text-sm mt-1">ユーザーが相談を完了するとここに表示されます。</p>
+                    </div>
                     )}
-                  </div>
-                ))
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 p-4 rounded-lg bg-slate-50">
-                  <p>保存された相談履歴はありません。</p>
-                  <p className="text-sm mt-1">ユーザーが相談を完了するとここに表示されます。</p>
+                </div>
+            </section>
+            
+            <section>
+              <h2 className="text-lg font-bold text-slate-800 mb-4">AIアシスタント管理</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {ASSISTANTS.map(assistant => (
+                    <div key={assistant.id} className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200 flex-shrink-0">
+                            {assistant.avatarComponent}
+                        </div>
+                        <div>
+                            <p className="font-semibold text-sm text-slate-800">{assistant.title}</p>
+                            <p className="text-xs text-slate-500">{assistant.type === 'human' ? '人間タイプ' : '犬タイプ'}</p>
+                        </div>
+                    </div>
+                ))}
               </div>
-            )}
+            </section>
+
           </div>
           <div className="mt-auto pt-4 border-t border-slate-200 space-y-3">
               <h3 className="text-sm font-semibold text-slate-600 px-1">データ管理</h3>
               <div className="flex gap-2">
+                  <button
+                      onClick={() => setIsAddTextModalOpen(true)}
+                      disabled={isAnalyzingAnything}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-600 text-white font-semibold rounded-lg shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
+                  >
+                      <PlusCircleIcon />テキストから追加
+                  </button>
                   <button
                       onClick={handleImportClick}
                       disabled={isAnalyzingAnything}
@@ -594,7 +649,25 @@ const AdminView: React.FC = () => {
             onClose={() => setSelectedConversation(null)}
         />
       )}
-    </div>
+
+      <AddTextModal
+        isOpen={isAddTextModalOpen}
+        onClose={() => setIsAddTextModalOpen(false)}
+        onSubmit={handleAddFromText}
+        existingUserIds={Object.keys(groupedConversations)}
+      />
+
+      {userToShare && (
+        <ShareReportModal
+          isOpen={isShareModalOpen}
+          onClose={() => { setIsShareModalOpen(false); setUserToShare(null); }}
+          userId={userToShare.userId}
+          conversations={userToShare.conversations}
+          individualAnalysisData={analyzedUserId === userToShare.userId ? individualAnalysisData : null}
+        />
+      )}
+
+    </>
   );
 };
 
