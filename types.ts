@@ -29,6 +29,7 @@ export interface StoredConversation {
   messages: ChatMessage[];
   summary: string;
   date: string;
+  status: 'completed' | 'interrupted';
 }
 
 // FIX: Added AIAssistant interface to resolve a type error in config/aiAssistants.ts.

@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChatMessage, MessageAuthor, StoredConversation, StoredData, STORAGE_VERSION, AIType } from '../types';
 import { getStreamingChatResponse, generateSummary, reviseSummary } from '../services/index';
@@ -5,6 +6,7 @@ import Header from '../components/Header';
 import ChatWindow from '../components/ChatWindow';
 import ChatInput from '../components/ChatInput';
 import SummaryModal from '../components/SummaryModal';
+import InterruptModal from '../components/InterruptModal';
 import AIAvatar from '../components/AIAvatar';
 import AvatarSelectionView from './AvatarSelectionView';
 import UserDashboard from '../components/UserDashboard';
@@ -37,6 +39,8 @@ const UserView: React.FC = () => {
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState<boolean>(false);
   const [summary, setSummary] = useState<string>('');
   const [isSummaryLoading, setIsSummaryLoading] = useState<boolean>(false);
+  const [isInterruptModalOpen, setIsInterruptModalOpen] = useState<boolean>(false);
+
 
   useEffect(() => {
     const allDataRaw = localStorage.getItem('careerConsultations');
@@ -46,17 +50,17 @@ const UserView: React.FC = () => {
             const parsed = JSON.parse(allDataRaw);
             let allConversations: StoredConversation[] = [];
 
-            // Handle new versioned format
             if (parsed && parsed.data && Array.isArray(parsed.data)) {
                 allConversations = parsed.data;
             } 
-            // Handle old array format for backward compatibility
             else if (Array.isArray(parsed)) {
                 allConversations = parsed;
             }
             
             if (allConversations.length > 0) {
-                 convs = allConversations.filter(c => c.userId === userId);
+                 const userConvs = allConversations.filter(c => c.userId === userId);
+                 // Backward compatibility for old data without status
+                 convs = userConvs.map(c => ({...c, status: c.status || 'completed'}));
             }
         } catch(e) {
             console.error("Failed to parse conversations from localStorage in UserView", e);
@@ -65,6 +69,14 @@ const UserView: React.FC = () => {
     setUserConversations(convs);
     setView(convs.length > 0 ? 'dashboard' : 'avatarSelection');
   }, [userId]);
+
+  const saveConversations = (allConversations: StoredConversation[]) => {
+      const dataToStore: StoredData = {
+          version: STORAGE_VERSION,
+          data: allConversations,
+      };
+      localStorage.setItem('careerConsultations', JSON.stringify(dataToStore));
+  };
 
 
   const handleNewChat = useCallback(() => {
@@ -102,11 +114,8 @@ const UserView: React.FC = () => {
   }, []);
   
   const handleBackToDashboard = () => {
-    if (messages.length > 1) {
-        if (window.confirm("ダッシュボードに戻りますか？\n現在の相談内容は保存されずに破棄されます。")) {
-            setView('dashboard');
-            setMessages([]);
-        }
+    if (messages.length > 1 && !isLoading) {
+       setIsInterruptModalOpen(true);
     } else {
         setView('dashboard');
         setMessages([]);
@@ -166,7 +175,6 @@ const UserView: React.FC = () => {
           });
       }
       
-      // Make summary ready after a few turns
       if (currentMessages.filter(m => m.author === MessageAuthor.USER).length >= 2) {
         setIsConsultationReady(true);
       }
@@ -210,21 +218,8 @@ const UserView: React.FC = () => {
         setIsSummaryLoading(false);
     }
   };
-
-  const handleFinalizeAndSave = () => {
-    let newConversation: StoredConversation | null = null;
-    if (summary && !summary.includes("エラーが発生しました")) {
-      newConversation = {
-        id: Date.now(),
-        userId: userId,
-        aiName,
-        aiType,
-        aiAvatar: aiAvatarKey,
-        messages,
-        summary: summary,
-        date: new Date().toISOString(),
-      };
-      
+  
+  const finalizeAndSave = (conversation: StoredConversation) => {
       try {
         const storedDataRaw = localStorage.getItem('careerConsultations');
         let currentAllConversations: StoredConversation[] = [];
@@ -237,33 +232,91 @@ const UserView: React.FC = () => {
             }
         }
 
-        const updatedAllConversations = [...currentAllConversations, newConversation];
-        const dataToStore: StoredData = {
-          version: STORAGE_VERSION,
-          data: updatedAllConversations,
-        };
-        localStorage.setItem('careerConsultations', JSON.stringify(dataToStore));
-        alert('相談内容が保存されました。');
+        const updatedAllConversations = [...currentAllConversations, conversation];
+        saveConversations(updatedAllConversations);
+        
+        setUserConversations(prev => [...prev, conversation]);
+        setView('dashboard');
+        
+        // Reset chat state
+        setMessages([]);
+        setSummary('');
+        
+        return true;
       } catch (error) {
         console.error("Failed to save conversation:", error);
         alert("相談内容の保存に失敗しました。");
-        newConversation = null; // Don't update state if save failed
+        return false;
       }
-    }
-    
-    setIsSummaryModalOpen(false);
-    setSummary('');
-    setMessages([]);
+  };
 
-    if(newConversation) {
-        setUserConversations(prev => [...prev, newConversation!]);
+  const handleFinalizeAndSave = () => {
+    if (summary && !summary.includes("エラーが発生しました")) {
+      const newConversation: StoredConversation = {
+        id: Date.now(),
+        userId: userId,
+        aiName,
+        aiType,
+        aiAvatar: aiAvatarKey,
+        messages,
+        summary: summary,
+        date: new Date().toISOString(),
+        status: 'completed',
+      };
+      
+      const success = finalizeAndSave(newConversation);
+      if(success) {
+          setIsSummaryModalOpen(false);
+          alert('相談内容が保存されました。');
+      }
+    } else {
+        setIsSummaryModalOpen(false);
     }
-    setView('dashboard');
   };
 
   const handleCloseSummaryModal = () => {
     setIsSummaryModalOpen(false);
   }
+
+  // --- Interrupt Handlers ---
+  const handleInterruptClick = () => {
+      if (!isLoading) {
+          setIsInterruptModalOpen(true);
+      }
+  };
+  
+  const handleContinueConversation = () => {
+      setIsInterruptModalOpen(false);
+  };
+  
+  const handleExitWithoutSaving = () => {
+      setIsInterruptModalOpen(false);
+      setView('dashboard');
+      setMessages([]);
+  };
+  
+  const handleSaveAndInterrupt = () => {
+    const interimSummary = `## 相談中断\n\n- **中断日時:** ${new Date().toLocaleString('ja-JP')}\n- **対話の要点:** (AIによる自動要約は行われていません)`;
+
+    const newConversation: StoredConversation = {
+        id: Date.now(),
+        userId: userId,
+        aiName,
+        aiType,
+        aiAvatar: aiAvatarKey,
+        messages,
+        summary: interimSummary,
+        date: new Date().toISOString(),
+        status: 'interrupted',
+    };
+    
+    const success = finalizeAndSave(newConversation);
+    if(success) {
+        setIsInterruptModalOpen(false);
+        alert('中断した相談内容が保存されました。');
+    }
+  };
+
 
   const renderContent = () => {
     switch(view) {
@@ -309,6 +362,8 @@ const UserView: React.FC = () => {
           onConsultClick={handleGenerateSummary}
           showBackButton={userConversations.length > 0}
           onBackClick={handleBackToDashboard}
+          showInterruptButton={messages.length > 1}
+          onInterruptClick={handleInterruptClick}
         />
       )}
       <main className={`flex-1 flex flex-col items-center ${view === 'chatting' ? 'p-4 md:p-6 justify-center overflow-hidden' : 'p-0 sm:p-4 md:p-6 justify-start'}`}>
@@ -322,6 +377,13 @@ const UserView: React.FC = () => {
         isLoading={isSummaryLoading}
         onRevise={handleReviseSummary}
         onFinalize={handleFinalizeAndSave}
+      />
+
+      <InterruptModal
+        isOpen={isInterruptModalOpen}
+        onSaveAndInterrupt={handleSaveAndInterrupt}
+        onExitWithoutSaving={handleExitWithoutSaving}
+        onContinue={handleContinueConversation}
       />
     </div>
   );

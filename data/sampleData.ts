@@ -21,6 +21,8 @@ export const sampleConversations: StoredConversation[] = [
       { author: MessageAuthor.USER, text: '将来的には、チーム全体で大きな成果を出せるような存在になりたいです。でも、自分が人をまとめるタイプなのか自信がなくて。' },
       { author: MessageAuthor.AI, text: 'チームで大きなことを！かっこいい目標だワン！ここまでたくさんお話ししてくれて、ありがとうワン！この内容を基に、次はプロのキャリアコンサルタントの人間さんが、もっと具体的なアドバイスをくれるよ。興味があったら教えてね！キミのキャリアがキラキラ輝くように、ボク、心から応援してるワン！'},
     ],
+    // FIX: Added missing 'status' property to conform to StoredConversation type.
+    status: 'completed',
     summary: `
 ## クライアントの現状
 - **職種**: Webエンジニア (経験3年)
@@ -62,6 +64,8 @@ export const sampleConversations: StoredConversation[] = [
       { author: MessageAuthor.USER, text: '最近、ワークライフバランスが気になっていて...。残業が多いのが少し悩みです。あと、今の業界とは違う、もっと社会貢献性の高い分野にも興味があります。' },
       { author: MessageAuthor.AI, text: 'そうでしたか。ワークライフバランスと、社会貢献性の高い分野へのご関心、という二つのテーマをお持ちなのですね。本日は貴重なお話をありがとうございました。これまでの内容を一度サマリーとして整理し、客観的に振り返ってみませんか？' },
     ],
+    // FIX: Added missing 'status' property to conform to StoredConversation type.
+    status: 'completed',
     summary: `
 ## クライアントの現状
 - **職種**: 営業職 (経験5年)
@@ -103,6 +107,8 @@ export const sampleConversations: StoredConversation[] = [
         { author: MessageAuthor.USER, text: '事務の経験から、コツコツ正確に作業するのは得意です。コミュニケーションも苦ではないです。' },
         { author: MessageAuthor.AI, text: 'コツコツできるのも、お話しできるのも、どっちも素晴らしい才能だワン！デザインのお仕事でも絶対役に立つよ！プロの人間さんとお話しすれば、もっと自信がつくはず！応援してるからね！' },
     ],
+    // FIX: Added missing 'status' property to conform to StoredConversation type.
+    status: 'completed',
     summary: `
 ## クライアントの現状
 - **職種**: 事務職
@@ -141,6 +147,8 @@ export const sampleConversations: StoredConversation[] = [
       { author: MessageAuthor.USER, text: 'はい、ピープルマネジメントの奥深さを感じました。ただ、やはり実践の場がないとイメージが湧きにくいですね。' },
       { author: MessageAuthor.AI, text: 'なるほど、知識と実践の間のギャップを感じていらっしゃるのですね。それは多くの方が経験する重要なステップです。よろしければ、これまでの内容を一度整理してみませんか？' }
     ],
+    // FIX: Added missing 'status' property to conform to StoredConversation type.
+    status: 'completed',
     summary: `
 ## クライアントの現状
 - **職種**: Webエンジニア (経験3年)

@@ -19,14 +19,23 @@ const ConversationDetailModal: React.FC<ConversationDetailModalProps> = ({ conve
     const rawMarkup = marked.parse(markdownText, { breaks: true, gfm: true }) as string;
     return { __html: rawMarkup };
   };
+  
+  const status = conversation.status || 'completed';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4 transition-opacity duration-300" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <header className="p-5 border-b border-slate-200 flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold text-slate-800">相談履歴の詳細</h2>
-            <p className="text-sm text-slate-500">{formatDate(conversation.date)} (担当AI: {conversation.aiName})</p>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-slate-800">相談履歴の詳細</h2>
+               <span className={`text-sm font-semibold px-2.5 py-1 rounded-full ${
+                    status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                }`}>
+                    {status === 'completed' ? '完了' : '中断'}
+                </span>
+            </div>
+            <p className="text-sm text-slate-500 mt-1">{formatDate(conversation.date)} (担当AI: {conversation.aiName})</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

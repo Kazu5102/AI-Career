@@ -6,10 +6,12 @@ interface HeaderProps {
   onConsultClick: () => void;
   showBackButton?: boolean;
   onBackClick?: () => void;
+  showInterruptButton?: boolean;
+  onInterruptClick?: () => void;
 }
 
 
-const Header: React.FC<HeaderProps> = ({ isConsultationReady, onConsultClick, showBackButton, onBackClick }) => {
+const Header: React.FC<HeaderProps> = ({ isConsultationReady, onConsultClick, showBackButton, onBackClick, showInterruptButton, onInterruptClick }) => {
   
   return (
     <header className="w-full bg-white shadow-md p-4 border-b border-slate-200">
@@ -38,7 +40,15 @@ const Header: React.FC<HeaderProps> = ({ isConsultationReady, onConsultClick, sh
           </div>
         </div>
 
-        <div className="min-w-[170px] text-right">
+        <div className="flex items-center gap-2">
+          {showInterruptButton && (
+            <button 
+              onClick={onInterruptClick}
+              className="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow-sm hover:bg-slate-300 transition-all duration-200"
+            >
+              相談を中断する
+            </button>
+          )}
           {isConsultationReady && (
             <button 
               onClick={onConsultClick}

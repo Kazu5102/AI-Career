@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { StoredConversation, StoredData, STORAGE_VERSION, AnalysisData, IndividualAnalysisData, AIAssistant } from '../types';
 import { analyzeConversations, generateSummaryFromText, analyzeIndividualConversations } from '../services/index';
@@ -72,19 +73,16 @@ const AdminView: React.FC = () => {
         const parsedData = JSON.parse(storedDataRaw);
         let dataToProcess: any[] | null = null;
 
-        // Case 1: New versioned format
         if (parsedData && typeof parsedData === 'object' && 'version' in parsedData && Array.isArray(parsedData.data)) {
             const storedData = parsedData as StoredData;
             if (storedData.version !== STORAGE_VERSION) {
                 console.warn(`Storage version mismatch. Found ${storedData.version}, expected ${STORAGE_VERSION}.`);
             }
             dataToProcess = storedData.data;
-        // Case 2: Old array format
         } else if (Array.isArray(parsedData)) {
             console.log("Old data format detected in AdminView. Migrating to versioned format.");
             dataToProcess = parsedData;
             needsResave = true;
-        // Case 3: Invalid format
         } else {
             throw new Error("ローカルストレージのデータが認識できない形式です。");
         }
@@ -100,11 +98,15 @@ const AdminView: React.FC = () => {
                     }
                     if (!conv.aiType) {
                         needsResave = true;
-                        migratedConv.aiType = 'dog'; // Default to dog for old data
+                        migratedConv.aiType = 'dog';
                     }
                     if (!conv.aiAvatar) {
                         needsResave = true;
                         migratedConv.aiAvatar = migratedConv.aiType === 'human' ? 'human_female_1' : 'dog_shiba_1';
+                    }
+                    if (!conv.status) {
+                        needsResave = true;
+                        migratedConv.status = 'completed';
                     }
                     return migratedConv;
                 });
@@ -316,12 +318,12 @@ const AdminView: React.FC = () => {
               
               validConversations.forEach(conv => {
                   if (!existingIds.has(conv.id)) {
-                      // Ensure imported conversations have all required fields
                       const importedConv: StoredConversation = { 
                           ...conv, 
                           userId: conv.userId || `user_imported_${conv.id}`,
                           aiType: conv.aiType || 'dog',
                           aiAvatar: conv.aiAvatar || (conv.aiType === 'human' ? 'human_female_1' : 'dog_shiba_1'),
+                          status: conv.status || 'completed',
                       };
                       newConversations.push(importedConv);
                   } else {
@@ -348,6 +350,7 @@ const AdminView: React.FC = () => {
                   date: new Date().toISOString(),
                   summary: summary,
                   messages: [],
+                  status: 'completed',
               };
               
               const updated = [...conversations, newConv].sort((a,b) => a.id - b.id);
@@ -453,7 +456,10 @@ const AdminView: React.FC = () => {
                                 {userConvs.map(conv => (
                                     <div key={conv.id} className="group relative w-full text-left p-3 rounded-lg hover:bg-slate-100 transition-colors duration-150 focus-within:outline-none focus-within:ring-2 focus-within:ring-sky-500">
                                         <div onClick={() => setSelectedConversation(conv)} className="cursor-pointer pr-8">
-                                            <p className="font-semibold text-slate-700 text-sm">{formatDate(conv.date)}</p>
+                                            <p className="font-semibold text-slate-700 text-sm flex items-center gap-2">
+                                                {formatDate(conv.date)}
+                                                {conv.status === 'interrupted' && <span className="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">[中断]</span>}
+                                            </p>
                                             <p className="text-xs text-slate-500">担当AI: {conv.aiName} ({conv.aiType === 'human' ? '人間' : '犬'})</p>
                                         </div>
                                         <button

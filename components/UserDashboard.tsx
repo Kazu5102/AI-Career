@@ -30,7 +30,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat 
   };
 
   const getAITypeDisplay = (conv: StoredConversation) => {
-    // Fallback for older data that might not have aiType
     if (!conv.aiType) return '';
     return conv.aiType === 'human' ? ' (人間)' : ' (犬)';
   };
@@ -92,7 +91,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat 
                   onClick={() => setSelectedConversation(conv)}
                   className="w-full text-left p-4 rounded-lg hover:bg-slate-100 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 >
-                  <p className="font-semibold text-slate-700">{formatDate(conv.date)}</p>
+                  <div className="font-semibold text-slate-700 flex items-center gap-2">
+                    {formatDate(conv.date)}
+                    {conv.status === 'interrupted' && <span className="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">中断</span>}
+                  </div>
                   <p className="text-sm text-slate-500">担当AI: {conv.aiName}{getAITypeDisplay(conv)}</p>
                 </button>
               ))}

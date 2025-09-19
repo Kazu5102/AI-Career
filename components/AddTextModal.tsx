@@ -48,6 +48,8 @@ const AddTextModal: React.FC<AddTextModalProps> = ({ isOpen, onClose, onSubmit, 
         messages: [],
         summary: summary,
         date: new Date().toISOString(),
+        // FIX: Added missing 'status' property to conform to StoredConversation type.
+        status: 'completed',
       };
       onSubmit(newConversation);
     } catch (err) {
