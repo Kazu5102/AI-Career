@@ -521,7 +521,7 @@ const AdminView: React.FC = () => {
           </div>
           <div className="mt-auto pt-4 border-t border-slate-200 space-y-3">
               <h3 className="text-sm font-semibold text-slate-600 px-1">データ管理</h3>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                   <button
                       onClick={() => setIsAddTextModalOpen(true)}
                       disabled={isAnalyzingAnything}

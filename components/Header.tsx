@@ -2,16 +2,12 @@
 import React from 'react';
 
 interface HeaderProps {
-  isConsultationReady: boolean;
-  onConsultClick: () => void;
   showBackButton?: boolean;
   onBackClick?: () => void;
-  showInterruptButton?: boolean;
-  onInterruptClick?: () => void;
 }
 
 
-const Header: React.FC<HeaderProps> = ({ isConsultationReady, onConsultClick, showBackButton, onBackClick, showInterruptButton, onInterruptClick }) => {
+const Header: React.FC<HeaderProps> = ({ showBackButton, onBackClick }) => {
   
   return (
     <header className="w-full bg-white shadow-md p-4 border-b border-slate-200">
@@ -38,25 +34,6 @@ const Header: React.FC<HeaderProps> = ({ isConsultationReady, onConsultClick, sh
                 AIキャリア相談
               </h1>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {showInterruptButton && (
-            <button 
-              onClick={onInterruptClick}
-              className="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow-sm hover:bg-slate-300 transition-all duration-200"
-            >
-              相談を中断する
-            </button>
-          )}
-          {isConsultationReady && (
-            <button 
-              onClick={onConsultClick}
-              className="px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-opacity-75 transition-all duration-200 animate-pulse"
-            >
-              相談内容を要約する
-            </button>
-          )}
         </div>
       </div>
     </header>

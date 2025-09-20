@@ -1,18 +1,22 @@
 
 import React, { useState } from 'react';
-import { StoredConversation, SkillMatchingResult } from '../types';
+import { StoredConversation, SkillMatchingResult, STORAGE_VERSION, StoredData } from '../types';
 import ConversationDetailModal from './ConversationDetailModal';
 import SkillMatchingModal from './SkillMatchingModal';
 import { performSkillMatching } from '../services/index';
 import TargetIcon from './icons/TargetIcon';
+import PlayIcon from './icons/PlayIcon';
+import ExportIcon from './icons/ExportIcon';
 
 
 interface UserDashboardProps {
   conversations: StoredConversation[];
   onNewChat: () => void;
+  onResume: (conversation: StoredConversation) => void;
+  userId: string;
 }
 
-const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat }) => {
+const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat, onResume, userId }) => {
   const [selectedConversation, setSelectedConversation] = useState<StoredConversation | null>(null);
   const [isMatchingModalOpen, setIsMatchingModalOpen] = useState(false);
   const [skillMatchingResult, setSkillMatchingResult] = useState<SkillMatchingResult | null>(null);
@@ -52,7 +56,28 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat 
     } finally {
         setIsMatching(false);
     }
-};
+  };
+
+  const handleExportUserData = () => {
+      if (conversations.length === 0) {
+          alert("エクスポートするデータがありません。");
+          return;
+      }
+      const dataToStore: StoredData = {
+          version: STORAGE_VERSION,
+          data: conversations,
+      };
+      const blob = new Blob([JSON.stringify(dataToStore, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const date = new Date().toISOString().split('T')[0];
+      a.download = `consulting_data_${userId}_${date}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+  };
 
   return (
     <>
@@ -71,13 +96,21 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat 
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-opacity-75 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
               >
                 <TargetIcon />
-                適性診断・スキルマッチング
+                適性診断
             </button>
             <button
               onClick={onNewChat}
               className="w-full sm:w-auto px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-opacity-75 transition-all duration-200"
             >
               新しい相談を始める
+            </button>
+            <button
+              onClick={handleExportUserData}
+              disabled={conversations.length === 0}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-600 text-white font-semibold rounded-lg shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-opacity-75 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
+            >
+                <ExportIcon />
+                管理者へデータ提出
             </button>
           </div>
         </header>
@@ -86,17 +119,27 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat 
           {conversations.length > 0 ? (
             <div className="space-y-2">
               {[...conversations].reverse().map(conv => (
-                <button
+                <div
                   key={conv.id}
-                  onClick={() => setSelectedConversation(conv)}
-                  className="w-full text-left p-4 rounded-lg hover:bg-slate-100 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full text-left p-3 rounded-lg hover:bg-slate-100 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-sky-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"
                 >
-                  <div className="font-semibold text-slate-700 flex items-center gap-2">
-                    {formatDate(conv.date)}
-                    {conv.status === 'interrupted' && <span className="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">中断</span>}
+                  <div className="flex-grow cursor-pointer" onClick={() => setSelectedConversation(conv)}>
+                    <div className="font-semibold text-slate-700 flex items-center gap-2">
+                      {formatDate(conv.date)}
+                      {conv.status === 'interrupted' && <span className="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">中断</span>}
+                    </div>
+                    <p className="text-sm text-slate-500">担当AI: {conv.aiName}{getAITypeDisplay(conv)}</p>
                   </div>
-                  <p className="text-sm text-slate-500">担当AI: {conv.aiName}{getAITypeDisplay(conv)}</p>
-                </button>
+                  {conv.status === 'interrupted' && (
+                    <button 
+                      onClick={() => onResume(conv)}
+                      className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center gap-2 mt-2 sm:mt-0 px-4 py-2 bg-emerald-100 text-emerald-800 font-semibold rounded-lg hover:bg-emerald-200 transition-colors"
+                    >
+                      <PlayIcon />
+                      続きから再開する
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           ) : (

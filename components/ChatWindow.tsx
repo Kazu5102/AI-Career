@@ -7,9 +7,10 @@ interface ChatWindowProps {
   messages: ChatMessage[];
   isLoading: boolean;
   onEditMessage: (index: number) => void;
+  hasBottomBar?: boolean;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, onEditMessage }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, onEditMessage, hasBottomBar }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,7 +28,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, onEditMess
   }
 
   return (
-    <div ref={scrollRef} className="flex-1 p-6 space-y-6 overflow-y-auto">
+    <div ref={scrollRef} className={`flex-1 p-6 space-y-6 overflow-y-auto ${hasBottomBar ? 'pb-28' : ''}`}>
       {messages.map((msg, index) => {
         const isLastMessage = index === messages.length - 1;
         const isAiThinking = isLastMessage && msg.author === MessageAuthor.AI && isLoading;

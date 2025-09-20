@@ -10,6 +10,7 @@ import InterruptModal from '../components/InterruptModal';
 import AIAvatar from '../components/AIAvatar';
 import AvatarSelectionView from './AvatarSelectionView';
 import UserDashboard from '../components/UserDashboard';
+import SmartBottomBar from '../components/SmartBottomBar';
 import { ASSISTANTS } from '../config/aiAssistants';
 
 const getUserId = (): string => {
@@ -27,7 +28,7 @@ const UserView: React.FC = () => {
   const [view, setView] = useState<UserViewMode>('loading');
   const [userId] = useState<string>(getUserId());
   const [userConversations, setUserConversations] = useState<StoredConversation[]>([]);
-
+  
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isConsultationReady, setIsConsultationReady] = useState<boolean>(false);
@@ -40,6 +41,7 @@ const UserView: React.FC = () => {
   const [summary, setSummary] = useState<string>('');
   const [isSummaryLoading, setIsSummaryLoading] = useState<boolean>(false);
   const [isInterruptModalOpen, setIsInterruptModalOpen] = useState<boolean>(false);
+  const [resumingConversationId, setResumingConversationId] = useState<number | null>(null);
 
 
   useEffect(() => {
@@ -59,7 +61,6 @@ const UserView: React.FC = () => {
             
             if (allConversations.length > 0) {
                  const userConvs = allConversations.filter(c => c.userId === userId);
-                 // Backward compatibility for old data without status
                  convs = userConvs.map(c => ({...c, status: c.status || 'completed'}));
             }
         } catch(e) {
@@ -80,6 +81,8 @@ const UserView: React.FC = () => {
 
 
   const handleNewChat = useCallback(() => {
+    setResumingConversationId(null);
+    setMessages([]);
     setView('avatarSelection');
   }, []);
 
@@ -119,6 +122,7 @@ const UserView: React.FC = () => {
     } else {
         setView('dashboard');
         setMessages([]);
+        setResumingConversationId(null);
     }
   };
 
@@ -228,19 +232,30 @@ const UserView: React.FC = () => {
             if (parsed.data && Array.isArray(parsed.data)) {
                 currentAllConversations = parsed.data;
             } else if (Array.isArray(parsed)) {
-                currentAllConversations = parsed; // handle old format
+                currentAllConversations = parsed;
             }
         }
+        
+        let updatedAllConversations: StoredConversation[];
+        if(resumingConversationId) {
+            updatedAllConversations = currentAllConversations.map(c => 
+                c.id === resumingConversationId ? conversation : c
+            );
+        } else {
+            updatedAllConversations = [...currentAllConversations, conversation];
+        }
 
-        const updatedAllConversations = [...currentAllConversations, conversation];
         saveConversations(updatedAllConversations);
         
-        setUserConversations(prev => [...prev, conversation]);
+        const userConvs = updatedAllConversations.filter(c => c.userId === userId)
+            .map(c => ({...c, status: c.status || 'completed'}));
+
+        setUserConversations(userConvs);
         setView('dashboard');
         
-        // Reset chat state
         setMessages([]);
         setSummary('');
+        setResumingConversationId(null);
         
         return true;
       } catch (error) {
@@ -253,7 +268,7 @@ const UserView: React.FC = () => {
   const handleFinalizeAndSave = () => {
     if (summary && !summary.includes("エラーが発生しました")) {
       const newConversation: StoredConversation = {
-        id: Date.now(),
+        id: resumingConversationId || Date.now(),
         userId: userId,
         aiName,
         aiType,
@@ -293,13 +308,14 @@ const UserView: React.FC = () => {
       setIsInterruptModalOpen(false);
       setView('dashboard');
       setMessages([]);
+      setResumingConversationId(null);
   };
   
   const handleSaveAndInterrupt = () => {
     const interimSummary = `## 相談中断\n\n- **中断日時:** ${new Date().toLocaleString('ja-JP')}\n- **対話の要点:** (AIによる自動要約は行われていません)`;
 
     const newConversation: StoredConversation = {
-        id: Date.now(),
+        id: resumingConversationId || Date.now(),
         userId: userId,
         aiName,
         aiType,
@@ -316,6 +332,16 @@ const UserView: React.FC = () => {
         alert('中断した相談内容が保存されました。');
     }
   };
+  
+  const handleResumeConversation = (conversationToResume: StoredConversation) => {
+    setMessages(conversationToResume.messages);
+    setAiName(conversationToResume.aiName);
+    setAiType(conversationToResume.aiType);
+    setAiAvatarKey(conversationToResume.aiAvatar);
+    setResumingConversationId(conversationToResume.id);
+    setIsConsultationReady(conversationToResume.messages.filter(m => m.author === MessageAuthor.USER).length >= 2);
+    setView('chatting');
+  };
 
 
   const renderContent = () => {
@@ -323,7 +349,12 @@ const UserView: React.FC = () => {
       case 'loading':
           return <div className="text-slate-500">読み込み中...</div>;
       case 'dashboard':
-          return <UserDashboard conversations={userConversations} onNewChat={handleNewChat} />;
+          return <UserDashboard 
+                    conversations={userConversations} 
+                    onNewChat={handleNewChat}
+                    onResume={handleResumeConversation} 
+                    userId={userId}
+                 />;
       case 'avatarSelection':
         return <AvatarSelectionView onSelect={handleAvatarSelected} />;
       case 'chatting':
@@ -332,11 +363,12 @@ const UserView: React.FC = () => {
             <div className="hidden lg:flex w-[400px] h-full flex-shrink-0">
               <AIAvatar avatarKey={aiAvatarKey} aiName={aiName} isLoading={isLoading} />
             </div>
-            <div className="flex-1 h-full flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="flex-1 h-full flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden relative">
               <ChatWindow 
                   messages={messages} 
                   isLoading={isLoading} 
                   onEditMessage={handleStartEdit}
+                  hasBottomBar={messages.length > 1}
               />
               <ChatInput 
                   onSubmit={handleSendMessage} 
@@ -345,6 +377,13 @@ const UserView: React.FC = () => {
                   initialText={editingState ? editingState.text : ''}
                   onCancelEdit={handleCancelEdit}
               />
+              {messages.length > 1 && (
+                  <SmartBottomBar
+                      isReady={isConsultationReady}
+                      onSummarize={handleGenerateSummary}
+                      onInterrupt={handleInterruptClick}
+                  />
+              )}
             </div>
           </div>
         );
@@ -358,12 +397,8 @@ const UserView: React.FC = () => {
     <div className={`flex flex-col bg-slate-100 ${view === 'chatting' ? 'h-full' : 'min-h-full'}`}>
       {view === 'chatting' && (
         <Header 
-          isConsultationReady={isConsultationReady}
-          onConsultClick={handleGenerateSummary}
           showBackButton={userConversations.length > 0}
           onBackClick={handleBackToDashboard}
-          showInterruptButton={messages.length > 1}
-          onInterruptClick={handleInterruptClick}
         />
       )}
       <main className={`flex-1 flex flex-col items-center ${view === 'chatting' ? 'p-4 md:p-6 justify-center overflow-hidden' : 'p-0 sm:p-4 md:p-6 justify-start'}`}>
