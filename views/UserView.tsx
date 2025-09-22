@@ -95,7 +95,6 @@ const UserView: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
     setAiType(type);
     setAiAvatarKey(avatarKey);
 
@@ -103,18 +102,39 @@ const UserView: React.FC = () => {
     const selectedName = names[Math.floor(Math.random() * names.length)];
     setAiName(selectedName);
     
-    let initialMessage = '';
+    const humanQuestions = [
+      "差し支えなければ、どのようにお呼びすればよろしいですか？",
+      "今後のため、お名前の呼び方を教えていただけますか？"
+    ];
+    const dogQuestions = [
+      "キミのこと、なんて呼んだらいいかな？",
+      "よかったら、キミの呼び名を教えてくれるワン？"
+    ];
+
+    let greetingText = '';
+    let questionText = '';
+
     if (type === 'human') {
-        initialMessage = `こんにちは。AIキャリアコンサルタントの${selectedName}です。本日はどのようなご相談でしょうか？あなたのキャリアについて、じっくりお話を伺わせてください。`;
+      greetingText = `こんにちは。AIキャリアコンサルタントの${selectedName}です。本日はどのようなご相談でしょうか？あなたのキャリアについて、じっくりお話を伺わせてください。`;
+      questionText = humanQuestions[Math.floor(Math.random() * humanQuestions.length)];
     } else { // dog
-        initialMessage = `こんにちは、ワン！ ボクはキャリア相談が得意なアシスタント犬の${selectedName}です。あなたのキャリアについて、一緒にお話ししよう！まず、あなたのことを少し教えてくれる？`;
+      greetingText = `ワンワン！はじめまして！ボク、キャリア相談わんこの${selectedName}だワン！キミのキャリアの悩み、何でもクンクン嗅ぎつけて、一緒に考えてワン！元気いっぱい、最後まで応援するから安心してね！`;
+      questionText = dogQuestions[Math.floor(Math.random() * dogQuestions.length)];
     }
     
-    setMessages([{ author: MessageAuthor.AI, text: initialMessage }]);
+    const greetingMessage: ChatMessage = { author: MessageAuthor.AI, text: greetingText };
+    
+    setMessages([greetingMessage]);
     setIsConsultationReady(false);
     setEditingState(null);
     setIsLoading(false);
     setView('chatting');
+
+    // Add the question as a second, slightly delayed message for a natural flow.
+    setTimeout(() => {
+      const questionMessage: ChatMessage = { author: MessageAuthor.AI, text: questionText };
+      setMessages(prev => [...prev, questionMessage]);
+    }, 1200); // 1.2 second delay feels natural
   }, []);
   
   const handleBackToDashboard = () => {
