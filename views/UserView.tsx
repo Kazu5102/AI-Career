@@ -11,7 +11,7 @@ import InterruptModal from '../components/InterruptModal';
 import AIAvatar from '../components/AIAvatar';
 import AvatarSelectionView from './AvatarSelectionView';
 import UserDashboard from '../components/UserDashboard';
-import SmartBottomBar from '../components/SmartBottomBar';
+import FloatingActionButton from '../components/FloatingActionButton';
 import { ASSISTANTS } from '../config/aiAssistants';
 
 const getUserId = (): string => {
@@ -389,7 +389,6 @@ const UserView: React.FC = () => {
                   messages={messages} 
                   isLoading={isLoading} 
                   onEditMessage={handleStartEdit}
-                  hasBottomBar={messages.length > 1}
               />
               <ChatInput 
                   onSubmit={handleSendMessage} 
@@ -399,7 +398,7 @@ const UserView: React.FC = () => {
                   onCancelEdit={handleCancelEdit}
               />
               {messages.length > 1 && (
-                  <SmartBottomBar
+                  <FloatingActionButton
                       isReady={isConsultationReady}
                       onSummarize={handleGenerateSummary}
                       onInterrupt={handleInterruptClick}

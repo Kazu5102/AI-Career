@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useRef } from 'react';
 import { ChatMessage, MessageAuthor } from '../types';
 import MessageBubble from './MessageBubble';
@@ -7,10 +8,9 @@ interface ChatWindowProps {
   messages: ChatMessage[];
   isLoading: boolean;
   onEditMessage: (index: number) => void;
-  hasBottomBar?: boolean;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, onEditMessage, hasBottomBar }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, onEditMessage }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, onEditMess
   }
 
   return (
-    <div ref={scrollRef} className={`flex-1 p-6 space-y-6 overflow-y-auto ${hasBottomBar ? 'pb-28' : ''}`}>
+    <div ref={scrollRef} className="flex-1 p-6 space-y-6 overflow-y-auto">
       {messages.map((msg, index) => {
         const isLastMessage = index === messages.length - 1;
         const isAiThinking = isLastMessage && msg.author === MessageAuthor.AI && isLoading;
