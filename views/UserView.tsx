@@ -376,14 +376,7 @@ const UserView: React.FC = () => {
                   isLoading={isLoading} 
                   onEditMessage={handleStartEdit}
               />
-              <div className="flex-shrink-0">
-                  {messages.length > 1 && (
-                     <ActionFooter
-                          isReady={isConsultationReady}
-                          onSummarize={handleGenerateSummary}
-                          onInterrupt={handleInterruptClick}
-                      />
-                  )}
+              <div className="flex-shrink-0 flex flex-col bg-white border-t border-slate-200">
                   <ChatInput 
                       onSubmit={handleSendMessage} 
                       isLoading={isLoading}
@@ -391,6 +384,13 @@ const UserView: React.FC = () => {
                       initialText={editingState ? editingState.text : ''}
                       onCancelEdit={handleCancelEdit}
                   />
+                  {messages.length > 1 && (
+                     <ActionFooter
+                          isReady={isConsultationReady}
+                          onSummarize={handleGenerateSummary}
+                          onInterrupt={handleInterruptClick}
+                      />
+                  )}
               </div>
             </div>
           </div>

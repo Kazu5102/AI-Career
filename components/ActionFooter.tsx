@@ -8,7 +8,7 @@ interface ActionFooterProps {
 
 const ActionFooter: React.FC<ActionFooterProps> = ({ isReady, onSummarize, onInterrupt }) => {
   return (
-    <div className="bg-white/80 backdrop-blur-sm p-3 border-t border-slate-200">
+    <div className="p-3 border-t border-slate-100">
       <div className="max-w-3xl mx-auto flex flex-col sm:flex-row gap-3">
         <button
           onClick={onInterrupt}

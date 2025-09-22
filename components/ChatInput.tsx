@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import SendIcon from './icons/SendIcon';
 import MicrophoneIcon from './icons/MicrophoneIcon';
@@ -166,7 +167,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
     : "メッセージを入力してください...";
 
   return (
-    <div className="p-4 bg-white border-t border-slate-200">
+    <div className="p-4">
        {isEditing && (
         <div className="text-sm text-slate-600 mb-2 px-2 flex justify-between items-center animate-pulse">
           <span className="font-semibold flex items-center gap-2"><EditIcon /> メッセージを編集中...</span>
