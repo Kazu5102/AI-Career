@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import SummarizeIcon from './icons/SummarizeIcon';
 import InterruptIcon from './icons/InterruptIcon';
@@ -14,7 +15,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ isReady, on
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="absolute bottom-6 right-6 z-30 flex flex-col items-end gap-3">
+    <div className="absolute bottom-24 right-4 z-30 flex flex-col items-end gap-3">
       {/* Action Buttons */}
       <div 
         className={`transition-all duration-300 ease-in-out flex flex-col items-end gap-3 ${
