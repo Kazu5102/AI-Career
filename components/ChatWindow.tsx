@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useRef } from 'react';
 import { ChatMessage, MessageAuthor } from '../types';
 import MessageBubble from './MessageBubble';
@@ -28,7 +26,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, onEditMess
   }
 
   return (
-    <div ref={scrollRef} className="flex-1 p-6 space-y-6 overflow-y-auto pb-24">
+    <div ref={scrollRef} className="flex-1 p-6 space-y-6 overflow-y-auto pb-40">
       {messages.map((msg, index) => {
         const isLastMessage = index === messages.length - 1;
         const isAiThinking = isLastMessage && msg.author === MessageAuthor.AI && isLoading;

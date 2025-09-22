@@ -1,5 +1,3 @@
-
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChatMessage, MessageAuthor, StoredConversation, StoredData, STORAGE_VERSION, AIType } from '../types';
 import { getStreamingChatResponse, generateSummary, reviseSummary } from '../services/index';
@@ -11,7 +9,7 @@ import InterruptModal from '../components/InterruptModal';
 import AIAvatar from '../components/AIAvatar';
 import AvatarSelectionView from './AvatarSelectionView';
 import UserDashboard from '../components/UserDashboard';
-import FloatingActionButton from '../components/FloatingActionButton';
+import ActionFooter from '../components/ActionFooter';
 import { ASSISTANTS } from '../config/aiAssistants';
 
 const getUserId = (): string => {
@@ -102,39 +100,31 @@ const UserView: React.FC = () => {
     const selectedName = names[Math.floor(Math.random() * names.length)];
     setAiName(selectedName);
     
-    const humanQuestions = [
-      "差し支えなければ、どのようにお呼びすればよろしいですか？",
-      "今後のため、お名前の呼び方を教えていただけますか？"
-    ];
-    const dogQuestions = [
-      "キミのこと、なんて呼んだらいいかな？",
-      "よかったら、キミの呼び名を教えてくれるワン？"
-    ];
-
+    // AI no longer asks for the user's name. This is handled by the application now.
     let greetingText = '';
-    let questionText = '';
-
     if (type === 'human') {
       greetingText = `こんにちは。AIキャリアコンサルタントの${selectedName}です。本日はどのようなご相談でしょうか？あなたのキャリアについて、じっくりお話を伺わせてください。`;
-      questionText = humanQuestions[Math.floor(Math.random() * humanQuestions.length)];
     } else { // dog
       greetingText = `ワンワン！はじめまして！ボク、キャリア相談わんこの${selectedName}だワン！キミのキャリアの悩み、何でもクンクン嗅ぎつけて、一緒に考えてワン！元気いっぱい、最後まで応援するから安心してね！`;
-      questionText = dogQuestions[Math.floor(Math.random() * dogQuestions.length)];
     }
     
     const greetingMessage: ChatMessage = { author: MessageAuthor.AI, text: greetingText };
-    
     setMessages([greetingMessage]);
+
+    // Application asks for the user's name after a short delay
+    setTimeout(() => {
+      const questions = type === 'human'
+        ? ["差し支えなければ、どのようにお呼びすればよろしいですか？", "今後のため、お名前の呼び方を教えていただけますか？"]
+        : ["キミのこと、なんて呼んだらいいかな？", "よかったら、キミの呼び名を教えてくれるワン？"];
+      const questionText = questions[Math.floor(Math.random() * questions.length)];
+      const questionMessage: ChatMessage = { author: MessageAuthor.AI, text: questionText };
+      setMessages(prev => [...prev, questionMessage]);
+    }, 1200);
+
     setIsConsultationReady(false);
     setEditingState(null);
     setIsLoading(false);
     setView('chatting');
-
-    // Add the question as a second, slightly delayed message for a natural flow.
-    setTimeout(() => {
-      const questionMessage: ChatMessage = { author: MessageAuthor.AI, text: questionText };
-      setMessages(prev => [...prev, questionMessage]);
-    }, 1200); // 1.2 second delay feels natural
   }, []);
   
   const handleBackToDashboard = () => {
@@ -216,32 +206,28 @@ const UserView: React.FC = () => {
     }
   };
 
-  const handleGenerateSummary = async () => {
+  const handleGenerateSummary = () => {
     setIsSummaryModalOpen(true);
     setIsSummaryLoading(true);
-    try {
-      const summaryText = await generateSummary(messages, aiType, aiName);
-      setSummary(summaryText);
-    } catch (error) {
-      console.error("Failed to generate summary:", error);
-      setSummary("サマリーの生成中にエラーが発生しました。時間をおいて再度お試しください。");
-    } finally {
-      setIsSummaryLoading(false);
-    }
+    generateSummary(messages, aiType, aiName)
+      .then(summaryText => setSummary(summaryText))
+      .catch(error => {
+        console.error("Failed to generate summary:", error);
+        setSummary("サマリーの生成中にエラーが発生しました。時間をおいて再度お試しください。");
+      })
+      .finally(() => setIsSummaryLoading(false));
   };
 
-  const handleReviseSummary = async (correctionRequest: string) => {
+  const handleReviseSummary = (correctionRequest: string) => {
     if (!correctionRequest.trim() || !summary) return;
     setIsSummaryLoading(true);
-    try {
-        const revisedSummaryText = await reviseSummary(summary, correctionRequest);
-        setSummary(revisedSummaryText);
-    } catch (error) {
-        console.error("Failed to revise summary:", error);
-        alert("サマリーの修正中にエラーが発生しました。");
-    } finally {
-        setIsSummaryLoading(false);
-    }
+    reviseSummary(summary, correctionRequest)
+        .then(revisedSummaryText => setSummary(revisedSummaryText))
+        .catch(error => {
+            console.error("Failed to revise summary:", error);
+            alert("サマリーの修正中にエラーが発生しました。");
+        })
+        .finally(() => setIsSummaryLoading(false));
   };
   
   const finalizeAndSave = (conversation: StoredConversation) => {
@@ -384,26 +370,28 @@ const UserView: React.FC = () => {
             <div className="hidden lg:flex w-[400px] h-full flex-shrink-0">
               <AIAvatar avatarKey={aiAvatarKey} aiName={aiName} isLoading={isLoading} />
             </div>
-            <div className="flex-1 h-full flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden relative">
+            <div className="flex-1 h-full flex flex-col bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
               <ChatWindow 
                   messages={messages} 
                   isLoading={isLoading} 
                   onEditMessage={handleStartEdit}
               />
-              <ChatInput 
-                  onSubmit={handleSendMessage} 
-                  isLoading={isLoading}
-                  isEditing={!!editingState}
-                  initialText={editingState ? editingState.text : ''}
-                  onCancelEdit={handleCancelEdit}
-              />
-              {messages.length > 1 && (
-                  <FloatingActionButton
-                      isReady={isConsultationReady}
-                      onSummarize={handleGenerateSummary}
-                      onInterrupt={handleInterruptClick}
+              <div className="flex-shrink-0">
+                  {messages.length > 1 && (
+                     <ActionFooter
+                          isReady={isConsultationReady}
+                          onSummarize={handleGenerateSummary}
+                          onInterrupt={handleInterruptClick}
+                      />
+                  )}
+                  <ChatInput 
+                      onSubmit={handleSendMessage} 
+                      isLoading={isLoading}
+                      isEditing={!!editingState}
+                      initialText={editingState ? editingState.text : ''}
+                      onCancelEdit={handleCancelEdit}
                   />
-              )}
+              </div>
             </div>
           </div>
         );
