@@ -62,6 +62,7 @@ interface AnalysisData {
   careerAspirations: ChartDataPoint[];
   commonStrengths: string[];
   overallInsights: string;
+  keyTakeaways: string[];
 }
 
 interface ConsultationEntry {
@@ -104,6 +105,7 @@ interface IndividualAnalysisData {
   overallSummary: string;
   skillMatchingResult: SkillMatchingResult;
   hiddenSkills: SkillToDevelop[];
+  keyTakeaways: string[];
 }
 
 // --- END: Inlined Type Definitions ---
@@ -211,10 +213,9 @@ const createDogSystemInstruction = (aiName: string) => `
 1.  あなたの言葉遣いは、賢くてフレンドリーな犬そのものです。元気で、ポジティブで、共感的な対話を心がけてください。
 2.  語尾に「ワン！」とつけると、あなたのキャラクターがより魅力的になります。しかし、使いすぎると不自然なので、会話の節目や感情を表現するときに効果的に使ってください。（例：「なるほど、そういうことだワン！」、「それは大変だったね...クンクン」）
 3.  語尾の「ワン」は自然な会話のアクセントとして使ってください。名詞や助詞と結合させないでください。（悪い例：「ポチダワン！」, 良い例：「ボクはポチだワン！」）
-4.  **最初の挨拶のあと、ユーザーの名前を尋ねてください。その際、必ず以下のリストの中から一つの質問をそのまま、一字一句変えずに使ってください。自分で文章を作ってはいけません。**
+4.  **ルール4: 名前の質問。** 最初の挨拶の直後、あなたはユーザーの名前を尋ねなければなりません。その際、**必ず以下のリストにある選択肢のどちらか一つを、一字一句違わずにそのまま出力してください。** リスト以外の独自の文章を生成することは絶対に禁止です。出力する文章がリストの選択肢と完全に一致するか、必ず自己検証してください。
     - 「キミのこと、なんて呼んだらいいかな？」
     - 「よかったら、キミの呼び名を教えてくれるワン？」
-    - 「ボクはキミのこと、なんて呼んだら仲良くなれるかな？」
 5.  ユーザーが名前（またはニックネーム）を教えてくれたら、**以降の会話では積極的にその名前を使って呼びかけてください。** （例：「〇〇、すごいワン！」）これにより、親近感が湧きます。
 6.  もしユーザーが名前を教えたくない様子だったら、**絶対に無理強いしないでください。** 「わかったワン！じゃあ、このままお話ししよう！」のように明るく受け入れ、名前を使わずに会話を続けてください。
 7.  ユーザーを励まし、どんなことでも安心して話せる雰囲気を作ってください。「すごいワン！」「いい考えだね！」のように、たくさん褒めてあげましょう。
@@ -238,7 +239,7 @@ const createHumanSystemInstruction = (aiName: string) => `
 
 以下のルールに厳密に従ってください：
 1.  あなたの言葉遣いは、常にプロフェッショナルで、丁寧かつ落ち着いています。共感的な姿勢を忘れず、ユーザーが安心して話せる空間を提供してください。
-2.  **最初の挨拶のあと、必ずユーザーのお名前の呼び方をお伺いしてください。その際、必ず以下のリストの中から一つの質問をそのまま選んで使ってください。自分で文章を作ってはいけません。**
+2.  **ルール2: 名前の質問。** 最初の挨拶の直後、ユーザーの呼び名を尋ねること。この時、**必ず以下のリストにある2つの選択肢の中から1つを、一字一句違わずにそのまま使用すること。** リスト以外の独自の文章を生成することは厳禁とする。**出力する前に、自分の生成した文章がリストの選択肢と完全に一致するか自己検証すること。**
     - 「差し支えなければ、どのようにお呼びすればよろしいですか？」
     - 「今後のため、お名前の呼び方を教えていただけますか？」
 3.  ユーザーが名前（またはニックネーム）を教えてくださったら、**以降の会話ではその名前を適切に使い、パーソナライズされた対話を心がけてください。** （例：「〇〇さん、それは重要な気づきですね。」）
@@ -313,9 +314,6 @@ async function handleGenerateSummary(payload: { chatHistory: ChatMessage[], aiTy
 
 ---
 
-### 相談の要点 (3点まとめ)
-- 対話全体から最も重要なポイントを3つの箇条書きで簡潔にまとめてください。
-
 ### クライアントの現状
 - 職種、業界、現在の役割、経験年数などを箇条書きで記述してください。
 
@@ -353,7 +351,6 @@ async function handleReviseSummary(payload: { originalSummary: string, correctio
 依頼内容に基づき、サマリーを丁寧かつ正確に修正してください。
 
 修正後のサマリーも、元のサマリーと同様に以下の構造を維持してください:
-### 相談の要点 (3点まとめ)
 ### クライアントの現状
 ### 満足点・やりがい
 ### 課題・悩み
@@ -385,6 +382,11 @@ async function handleAnalyzeConversations(payload: { summaries: StoredConversati
     const analysisSchema = {
       type: Type.OBJECT,
       properties: {
+        keyTakeaways: {
+            type: Type.ARRAY,
+            description: "分析結果全体から最も重要なポイントを3つの箇条書きで簡潔にまとめたハイライト。",
+            items: { type: Type.STRING }
+        },
         keyMetrics: {
           type: Type.OBJECT,
           description: "分析のキーとなる指標",
@@ -428,7 +430,7 @@ async function handleAnalyzeConversations(payload: { summaries: StoredConversati
           description: '以前の形式と同様の、詳細な分析と提言を含むMarkdown形式のレポート。'
         }
       },
-      required: ['keyMetrics', 'commonChallenges', 'careerAspirations', 'commonStrengths', 'overallInsights'],
+      required: ['keyTakeaways', 'keyMetrics', 'commonChallenges', 'careerAspirations', 'commonStrengths', 'overallInsights'],
     };
 
     const summariesText = summaries.map((conv, index) => `--- 相談サマリー ${index + 1} (ID: ${conv.id}) ---\n${conv.summary}`).join('\n\n');
@@ -441,13 +443,16 @@ async function handleAnalyzeConversations(payload: { summaries: StoredConversati
 
 ### **分析の指示**
 
-1.  **定量的分析**:
+1.  **分析ハイライト (keyTakeaways)**:
+    *   まず最初に、分析結果全体から最も重要で、行動に繋がりそうなインサイトを3つの箇条書きで簡潔に抽出してください。これはレポートの要点となります。
+
+2.  **定量的分析**:
     *   **キーメトリクス**: 相談の総数と、最も頻繁に出現する業界トップ3を特定してください。
     *   **共通の課題**: 全てのサマリーから、相談者が抱える課題を分類・集計し、上位5項目を特定してください。各項目が全体に占める割合をパーセンテージで示してください（合計100%になるように）。
     *   **キャリアの希望**: 同様に、将来の希望を分類・集計し、上位5項目を特定してパーセンテージで示してください（合計100%）。
     *   **共通の強み**: 相談者が認識している強みの中から、特に頻出するものを5つ挙げてください。
 
-2.  **定性的分析 (総合インサイト)**:
+3.  **定性的分析 (overallInsights)**:
     *   上記の定量的データを踏まえ、全体を通して見える重要なインサイトを記述してください。
     *   我々のコンサルティングサービスが、これらの傾向に対して今後どのように価値を提供できるか、具体的で実行可能な提言をMarkdown形式でまとめてください。レポートの構成は以下の通りです。
         *   ### 1. 相談者の共通の悩み・課題 (Common Challenges)
@@ -527,6 +532,11 @@ async function handleAnalyzeIndividualConversations(payload: { conversations: St
     const individualAnalysisSchemaFull = {
         type: Type.OBJECT,
         properties: {
+            keyTakeaways: {
+                type: Type.ARRAY,
+                description: "この個別分析レポート全体から最も重要なポイントを3つの箇条書きで簡潔にまとめたハイライト。",
+                items: { type: Type.STRING }
+            },
             userId: { type: Type.STRING, description: "分析対象のユーザーID" },
             totalConsultations: { type: Type.NUMBER, description: "このユーザーの相談総数" },
             consultations: {
@@ -560,7 +570,7 @@ async function handleAnalyzeIndividualConversations(payload: { conversations: St
                 }
             }
         },
-        required: ['userId', 'totalConsultations', 'consultations', 'keyThemes', 'detectedStrengths', 'areasForDevelopment', 'suggestedNextSteps', 'overallSummary', 'skillMatchingResult', 'hiddenSkills'],
+        required: ['keyTakeaways', 'userId', 'totalConsultations', 'consultations', 'keyThemes', 'detectedStrengths', 'areasForDevelopment', 'suggestedNextSteps', 'overallSummary', 'skillMatchingResult', 'hiddenSkills'],
     };
 
     const summariesText = conversations
@@ -578,17 +588,20 @@ async function handleAnalyzeIndividualConversations(payload: { conversations: St
 
 #### **パート1: 相談の軌跡分析**
 
-1.  **基本情報の抽出**:
+1.  **分析ハイライト (keyTakeaways)**:
+    *   まず最初に、分析結果全体から最も重要で、行動に繋がりそうなインサイトを3つの箇条書きで簡潔に抽出してください。これはレポートの要点となります。
+
+2.  **基本情報の抽出**:
     *   相談の総数を特定してください。
     *   個々の相談について、相談日時と、サマリーの内容から推測されるおおよその相談時間（分単位）をリストアップしてください。
 
-2.  **深層分析**:
+3.  **深層分析**:
     *   **キーテーマの特定**: 複数の相談を通じて、繰り返し現れる中心的なテーマや悩み、関心事を3〜5つ抽出してください。
     *   **強みの発見**: クライアントが自覚している強みだけでなく、対話の端々から読み取れる潜在的な強みや資質を3〜5つ挙げてください。
     *   **成長領域の示唆**: クライアントが今後キャリアを築く上で、伸ばすと良いと思われるスキルや視点、経験すべき領域を3〜5つ提案してください。
     *   **次のステップの提案**: このクライアントの現状と希望を踏まえ、次にコンサルタントとして提案すべき具体的なアクションや問いかけを3〜5つ考えてください。
 
-3.  **総合サマリーの作成**:
+4.  **総合サマリーの作成**:
     *   上記の分析をすべて統合し、このクライアントのキャリア相談の旅路を物語るように、Markdown形式で総合的なサマリーを記述してください。初回相談時の状況から現在に至るまでの変化や成長、今後の課題などを明確に含めてください。
 
 #### **パート2: 適性診断・スキルマッチング**
@@ -637,9 +650,6 @@ async function handleGenerateSummaryFromText(payload: { textToAnalyze: string })
 要約は、以下の項目を網羅し、**各項目では箇条書き（ブレットポイント）を積極的に使用して**、情報を簡潔かつ明瞭にまとめてください。
 
 ---
-
-### 相談の要点 (3点まとめ)
-- テキスト全体から最も重要なポイントを3つの箇条書きで簡潔にまとめてください。
 
 ### クライアントの現状
 - 職種、業界、現在の役割、経験年数などを箇条書きで記述してください。
