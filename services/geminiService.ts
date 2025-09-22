@@ -1,5 +1,4 @@
-
-import { ChatMessage, StoredConversation, AnalysisData, AIType, IndividualAnalysisData, SkillMatchingResult } from '../types';
+import { ChatMessage, StoredConversation, AnalysisData, AIType, TrajectoryAnalysisData, HiddenPotentialData, SkillMatchingResult } from '../types';
 
 const PROXY_API_ENDPOINT = '/api/gemini-proxy'; // The serverless function endpoint
 const ANALYSIS_TIMEOUT = 300000; // 5 minutes for long-running tasks
@@ -117,12 +116,21 @@ export const analyzeConversations = async (summaries: StoredConversation[]): Pro
     }
 };
 
-export const analyzeIndividualConversations = async (conversations: StoredConversation[], userId: string): Promise<IndividualAnalysisData> => {
+export const analyzeTrajectory = async (conversations: StoredConversation[], userId: string): Promise<TrajectoryAnalysisData> => {
     try {
-        return await fetchFromProxy('analyzeIndividualConversations', { conversations, userId }, false, ANALYSIS_TIMEOUT);
+        return await fetchFromProxy('analyzeTrajectory', { conversations, userId }, false, ANALYSIS_TIMEOUT);
     } catch (error) {
-        console.error("Error generating individual analysis:", error);
-        throw new Error(`個別分析APIの呼び出しに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+        console.error("Error generating trajectory analysis:", error);
+        throw new Error(`相談軌跡の分析APIの呼び出しに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+    }
+};
+
+export const findHiddenPotential = async (conversations: StoredConversation[], userId: string): Promise<HiddenPotentialData> => {
+    try {
+        return await fetchFromProxy('findHiddenPotential', { conversations, userId }, false, ANALYSIS_TIMEOUT);
+    } catch (error) {
+        console.error("Error finding hidden potential:", error);
+        throw new Error(`隠れた可能性の分析APIの呼び出しに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
     }
 };
 

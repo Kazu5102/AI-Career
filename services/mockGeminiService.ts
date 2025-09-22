@@ -1,5 +1,4 @@
-
-import { ChatMessage, StoredConversation, AnalysisData, AIType, IndividualAnalysisData, SkillMatchingResult } from '../types';
+import { ChatMessage, StoredConversation, AnalysisData, AIType, TrajectoryAnalysisData, HiddenPotentialData, SkillMatchingResult } from '../types';
 
 // ===================================================================================
 //  This is a mock service for development and preview environments.
@@ -28,6 +27,11 @@ const sampleAnalysisData: AnalysisData = {
         { label: '独立・起業', value: 10 },
     ],
     commonStrengths: ['学習意欲', 'コミュニケーション能力', '課題解決能力', '正確性', '協調性'],
+    keyTakeaways: [
+        "多くの相談者がキャリアの不確実性に悩んでいる。",
+        "成長意欲が高く、スキルアップに関心がある。",
+        "自己分析と具体的な情報提供が有効な支援となる。"
+    ],
     overallInsights: `
 ### 1. 相談者の共通の悩み・課題 (Common Challenges)
 - **キャリアの不確実性:** 多くの相談者が、将来のキャリアパスについて漠然とした不安を抱えています。特に、技術職と管理職の分岐点や、未経験分野への挑戦に関する悩みが顕著です。
@@ -130,8 +134,8 @@ export const analyzeConversations = async (summaries: StoredConversation[]): Pro
     };
 };
 
-export const analyzeIndividualConversations = async (conversations: StoredConversation[], userId: string): Promise<IndividualAnalysisData> => {
-    console.log("[Mock] analyzeIndividualConversations called for user:", userId);
+export const analyzeTrajectory = async (conversations: StoredConversation[], userId: string): Promise<TrajectoryAnalysisData> => {
+    console.log("[Mock] analyzeTrajectory called for user:", userId);
     await delay(2500);
     return {
         userId,
@@ -144,14 +148,17 @@ export const analyzeIndividualConversations = async (conversations: StoredConver
         detectedStrengths: ['学習意欲', '協調性', '課題発見能力'],
         areasForDevelopment: ['ポートフォリオ作成', '面接対策'],
         suggestedNextSteps: ['具体的な職種研究', '情報収集の継続'],
-        overallSummary: `ユーザー **${userId}** のデモ用個別分析レポートです。
-        
-- **相談の軌跡**: 複数回の相談を通じて、自己理解が深まっている様子が伺えます。
-- **今後の展望**: 具体的なアクションプランの策定が次のステップです。
-        `,
-        skillMatchingResult: sampleSkillMatchingResult,
+        overallSummary: `ユーザー **${userId}** のデモ用個別分析レポートです。\n- **相談の軌跡**: 複数回の相談を通じて、自己理解が深まっている様子が伺えます。\n- **今後の展望**: 具体的なアクションプランの策定が次のステップです。`
+    };
+};
+
+export const findHiddenPotential = async (conversations: StoredConversation[], userId: string): Promise<HiddenPotentialData> => {
+    console.log("[Mock] findHiddenPotential called for user:", userId);
+    await delay(2000);
+    return {
         hiddenSkills: [
-            { skill: '潜在的なリーダーシップ', reason: 'チームでの成果を重視する発言から、将来的にリーダーシップを発揮する可能性があります。' }
+            { skill: '潜在的なリーダーシップ', reason: 'チームでの成果を重視する発言から、将来的にリーダーシップを発揮する可能性があります。' },
+            { skill: 'UXデザインへの関心', reason: 'UI改善の成功体験を嬉しそうに語っており、ユーザー視点でのプロダクト開発に関心があるかもしれません。' }
         ]
     };
 };

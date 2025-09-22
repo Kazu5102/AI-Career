@@ -136,7 +136,8 @@ const AnalysisDashboard: React.FC<Props> = ({ conversations, onNewChat }) => {
                       <p className="mt-1">{error}</p>
                   </div>
               ) : analysisData ? (
-                  <AnalysisDisplay data={analysisData} />
+                  // FIX: The AnalysisDisplay component expects a 'cache' prop, not 'data'. The data should also be wrapped in an object with a 'comprehensive' key.
+                  <AnalysisDisplay cache={{ comprehensive: analysisData }} />
               ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center text-slate-500">
                       <AnalyticsIcon className="w-12 h-12 text-slate-400 mb-4" />

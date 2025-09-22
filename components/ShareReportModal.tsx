@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StoredConversation, IndividualAnalysisData } from '../types';
+import { StoredConversation, UserAnalysisCache } from '../types';
 import { generateReport } from '../services/reportService';
 import ShareIcon from './icons/ShareIcon';
 
@@ -8,10 +8,10 @@ interface ShareReportModalProps {
   onClose: () => void;
   userId: string;
   conversations: StoredConversation[];
-  individualAnalysisData: IndividualAnalysisData | null;
+  cache: UserAnalysisCache | null | undefined;
 }
 
-const ShareReportModal: React.FC<ShareReportModalProps> = ({ isOpen, onClose, userId, conversations, individualAnalysisData }) => {
+const ShareReportModal: React.FC<ShareReportModalProps> = ({ isOpen, onClose, userId, conversations, cache }) => {
   const [password, setPassword] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -24,12 +24,7 @@ const ShareReportModal: React.FC<ShareReportModalProps> = ({ isOpen, onClose, us
     setError('');
     setIsGenerating(true);
     try {
-      const dataToReport = {
-        userId,
-        conversations,
-        analysis: individualAnalysisData,
-      };
-      const reportBlob = await generateReport(dataToReport, password);
+      const reportBlob = await generateReport({ userId, conversations, analysisCache: cache }, password);
       const url = URL.createObjectURL(reportBlob);
       const a = document.createElement('a');
       a.href = url;
@@ -67,8 +62,7 @@ const ShareReportModal: React.FC<ShareReportModalProps> = ({ isOpen, onClose, us
 
         <div className="p-6 space-y-4">
           <p className="text-sm text-slate-600">
-            この相談者の全データを含む、パスワードで暗号化された単一のHTMLファイルを生成します。
-            このファイルとパスワードを共有することで、安全に情報を連携できます。
+            この相談者の全データ（対話履歴、全分析結果）を含む、パスワードで暗号化された単一のHTMLファイルを生成します。
           </p>
           <div>
             <label htmlFor="report-password" className="block text-sm font-bold text-slate-700 mb-2">
@@ -101,15 +95,9 @@ const ShareReportModal: React.FC<ShareReportModalProps> = ({ isOpen, onClose, us
             className="w-full flex items-center justify-center gap-2 px-4 py-2 font-semibold rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 disabled:bg-slate-400 disabled:cursor-not-allowed"
           >
             {isGenerating ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>生成中...</span>
-              </>
+              <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div><span>生成中...</span></>
             ) : (
-              <>
-                <ShareIcon className="w-5 h-5"/>
-                生成してダウンロード
-              </>
+              <><ShareIcon className="w-5 h-5"/>生成してダウンロード</>
             )}
           </button>
         </footer>

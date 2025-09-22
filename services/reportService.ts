@@ -1,10 +1,10 @@
 import { encryptData } from './cryptoService';
-import { StoredConversation, IndividualAnalysisData } from '../types';
+import { StoredConversation, UserAnalysisCache } from '../types';
 
 interface ReportData {
   userId: string;
   conversations: StoredConversation[];
-  analysis: IndividualAnalysisData | null;
+  analysisCache: UserAnalysisCache | null | undefined;
 }
 
 export const generateReport = async (data: ReportData, password: string): Promise<Blob> => {
@@ -21,12 +21,11 @@ export const generateReport = async (data: ReportData, password: string): Promis
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: sans-serif; }
-        .prose h1, .prose h2, .prose h3 { font-weight: bold; }
+        .prose h1, .prose h2, .prose h3, .prose h4 { font-weight: bold; }
         .prose ul { list-style-type: disc; padding-left: 1.5rem; }
         .prose li { margin-bottom: 0.5rem; }
         #content { display: none; }
         #password-form { max-width: 400px; margin: 5rem auto; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        .hidden { display: none; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -45,7 +44,7 @@ export const generateReport = async (data: ReportData, password: string): Promis
             <h1 class="text-3xl font-bold">相談者レポート</h1>
             <p class="text-slate-500">相談者ID: <span id="user-id" class="font-mono"></span></p>
         </header>
-        <div id="report-body" class="space-y-8"></div>
+        <div id="report-body" class="space-y-12"></div>
     </main>
     
     <script>
@@ -57,29 +56,9 @@ export const generateReport = async (data: ReportData, password: string): Promis
                 const iv = new Uint8Array(ivHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
                 const salt = new Uint8Array(saltHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
                 const data = new Uint8Array(dataHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-
-                const keyMaterial = await window.crypto.subtle.importKey(
-                    'raw',
-                    new TextEncoder().encode(password),
-                    { name: 'PBKDF2' },
-                    false,
-                    ['deriveKey']
-                );
-
-                const key = await window.crypto.subtle.deriveKey(
-                    { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
-                    keyMaterial,
-                    { name: 'AES-GCM', length: 256 },
-                    true,
-                    ['decrypt']
-                );
-
-                const decrypted = await window.crypto.subtle.decrypt(
-                    { name: 'AES-GCM', iv: iv },
-                    key,
-                    data
-                );
-
+                const keyMaterial = await window.crypto.subtle.importKey('raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveKey']);
+                const key = await window.crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, true, ['decrypt']);
+                const decrypted = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
                 return new TextDecoder().decode(decrypted);
             } catch (error) {
                 console.error('Decryption failed:', error);
@@ -114,20 +93,31 @@ export const generateReport = async (data: ReportData, password: string): Promis
         function renderReport(data) {
             document.getElementById('user-id').textContent = data.userId;
             const reportBody = document.getElementById('report-body');
-
             let html = '';
 
-            // Render Analysis
-            if (data.analysis) {
-                html += \`<section class="prose max-w-none"><h2>個別分析レポート</h2>\${markdownToHtml(data.analysis.overallSummary)}</section>\`;
+            // Render Analysis Sections
+            if (data.analysisCache) {
+                html += '<div><h2 class="text-2xl font-bold border-b pb-2 mb-4">分析レポート</h2><div class="space-y-6">';
+                if (data.analysisCache.trajectory) {
+                    html += '<h3 class="text-xl font-bold text-sky-700 mt-4">相談の軌跡</h3>';
+                    html += '<div class="prose max-w-none">' + markdownToHtml(data.analysisCache.trajectory.overallSummary) + '</div>';
+                }
+                if (data.analysisCache.skillMatching) {
+                    html += '<h3 class="text-xl font-bold text-sky-700 mt-4">適性診断</h3>';
+                    html += '<div class="prose max-w-none">' + markdownToHtml(data.analysisCache.skillMatching.analysisSummary) + '</div>';
+                }
+                if (data.analysisCache.hiddenPotential) {
+                     html += '<h3 class="text-xl font-bold text-amber-700 mt-4">隠れた可能性</h3>';
+                     html += '<div class="prose max-w-none">' + data.analysisCache.hiddenPotential.hiddenSkills.map(s => \`<h4>\${s.skill}</h4><p>\${s.reason}</p>\`).join('') + '</div>';
+                }
+                html += '</div></div>';
             }
 
             // Render Conversations
-            html += \`<section>
-                <h2 class="text-2xl font-bold mt-8 border-b pb-2">対話履歴 (\${data.conversations.length}件)</h2>
+            html += \`<div>
+                <h2 class="text-2xl font-bold border-b pb-2 mb-4">対話履歴 (\${data.conversations.length}件)</h2>
                 <div class="space-y-6 mt-4">
             \`;
-            
             data.conversations.forEach(conv => {
                 const date = new Date(conv.date).toLocaleString('ja-JP');
                 html += \`<div class="p-4 border rounded-lg bg-slate-50">
@@ -139,23 +129,21 @@ export const generateReport = async (data: ReportData, password: string): Promis
                     </div>
                 </div>\`;
             });
-            html += \`</div></section>\`;
+            html += '</div></div>';
 
             reportBody.innerHTML = html;
         }
 
-        // Simple Markdown to HTML, good enough for this purpose
         function markdownToHtml(md) {
             if (!md) return '';
             return md
-                .replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold mt-4 mb-2">$1</h3>')
-                .replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold mt-6 mb-3 border-b pb-2">$1</h2>')
+                .replace(/^### (.*$)/gim, '<h4 class="text-lg font-bold mt-4 mb-2">$1</h4>')
+                .replace(/^## (.*$)/gim, '<h3 class="text-xl font-bold mt-6 mb-3 border-b pb-2">$1</h3>')
                 .replace(/\* \*(.*?)\* \*/gim, '<strong>$1</strong>')
                 .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-                .replace(/^- (.*$)/gim, '<li class="ml-4">$1</li>')
+                .replace(/^- (.*$)/gim, (match, content) => \`<li class="ml-4 list-disc">\${content.trim()}</li>\`)
                 .replace(/\\n/g, '<br>');
         }
-
     </script>
 </body>
 </html>

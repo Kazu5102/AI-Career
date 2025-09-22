@@ -1,4 +1,3 @@
-
 import type React from 'react';
 
 export const STORAGE_VERSION = 1;
@@ -32,7 +31,6 @@ export interface StoredConversation {
   status: 'completed' | 'interrupted';
 }
 
-// FIX: Added AIAssistant interface to resolve a type error in config/aiAssistants.ts.
 export interface AIAssistant {
   id: string;
   type: AIType;
@@ -57,25 +55,9 @@ export interface AnalysisData {
   careerAspirations: ChartDataPoint[];
   commonStrengths: string[];
   overallInsights: string; // Markdown text for summary
+  keyTakeaways: string[];
 }
 
-export interface ConsultationEntry {
-    dateTime: string;
-    estimatedDurationMinutes: number;
-}
-
-export interface IndividualAnalysisData {
-  userId: string;
-  totalConsultations: number;
-  consultations: ConsultationEntry[];
-  keyThemes: string[];
-  detectedStrengths: string[];
-  areasForDevelopment: string[];
-  suggestedNextSteps: string[];
-  overallSummary: string; // Markdown
-  skillMatchingResult: SkillMatchingResult;
-  hiddenSkills: SkillToDevelop[];
-}
 
 // Types for Skill Matching feature
 export interface RecommendedRole {
@@ -100,4 +82,35 @@ export interface SkillMatchingResult {
   recommendedRoles: RecommendedRole[];
   skillsToDevelop: SkillToDevelop[];
   learningResources: LearningResource[];
+}
+
+// --- NEW TYPES FOR SPLIT INDIVIDUAL ANALYSIS ---
+
+export interface ConsultationEntry {
+    dateTime: string;
+    estimatedDurationMinutes: number;
+}
+
+// 1. Trajectory Analysis
+export interface TrajectoryAnalysisData {
+    userId: string;
+    totalConsultations: number;
+    consultations: ConsultationEntry[];
+    keyThemes: string[];
+    detectedStrengths: string[];
+    areasForDevelopment: string[];
+    suggestedNextSteps: string[];
+    overallSummary: string; // Markdown
+}
+
+// 2. Hidden Potential Analysis
+export interface HiddenPotentialData {
+    hiddenSkills: SkillToDevelop[];
+}
+
+// 3. Cache Structure for all user analyses
+export interface UserAnalysisCache {
+    trajectory?: TrajectoryAnalysisData;
+    skillMatching?: SkillMatchingResult;
+    hiddenPotential?: HiddenPotentialData;
 }

@@ -1,6 +1,7 @@
 import * as realService from './geminiService';
 import * as mockService from './mockGeminiService';
-import type { ChatMessage, StoredConversation, AnalysisData, AIType, IndividualAnalysisData, SkillMatchingResult } from '../types';
+// FIX: Removed non-existent 'IndividualAnalysisData' type and added required types for new analysis functions.
+import type { ChatMessage, StoredConversation, AnalysisData, AIType, TrajectoryAnalysisData, HiddenPotentialData, SkillMatchingResult } from '../types';
 
 // This file intelligently switches between the real API service and a mock service.
 // This allows the app to be functional in preview environments (where serverless functions don't run)
@@ -29,7 +30,10 @@ export const reviseSummary = (originalSummary: string, correctionRequest: string
 
 export const analyzeConversations = (summaries: StoredConversation[]): Promise<AnalysisData> => service.analyzeConversations(summaries);
 
-export const analyzeIndividualConversations = (conversations: StoredConversation[], userId: string): Promise<IndividualAnalysisData> => service.analyzeIndividualConversations(conversations, userId);
+// FIX: Removed the non-existent 'analyzeIndividualConversations' and added exports for new individual analysis functions.
+export const analyzeTrajectory = (conversations: StoredConversation[], userId: string): Promise<TrajectoryAnalysisData> => service.analyzeTrajectory(conversations, userId);
+
+export const findHiddenPotential = (conversations: StoredConversation[], userId: string): Promise<HiddenPotentialData> => service.findHiddenPotential(conversations, userId);
 
 export const generateSummaryFromText = (textToAnalyze: string): Promise<string> => service.generateSummaryFromText(textToAnalyze);
 
