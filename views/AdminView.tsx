@@ -248,14 +248,75 @@ const AdminView: React.FC = () => {
   };
 
   const handleExport = () => {
-      // ... (existing export logic)
+    if (conversations.length === 0) {
+        alert("エクスポートするデータがありません。");
+        return;
+    }
+    const dataToStore: StoredData = {
+        version: STORAGE_VERSION,
+        data: conversations,
+    };
+    const blob = new Blob([JSON.stringify(dataToStore, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const date = new Date().toISOString().split('T')[0];
+    a.download = `all_consulting_data_${date}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
+
   const handleImportClick = () => fileInputRef.current?.click();
+  
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-      // ... (existing file change logic)
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setIsImporting(true);
+    setError(null);
+    try {
+        const content = await file.text();
+        await processImportedFile(content);
+        alert('データのインポートが完了しました。');
+    } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "不明なエラー";
+        setError(`ファイルのインポートに失敗しました: ${errorMessage}`);
+    } finally {
+        setIsImporting(false);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    }
   };
+
   const processImportedFile = async (content: string) => {
-      // ... (existing import processing logic)
+    try {
+        const parsed = JSON.parse(content);
+        let importedConvs: StoredConversation[] = [];
+
+        if (parsed && parsed.data && Array.isArray(parsed.data)) {
+            importedConvs = parsed.data;
+        } else if (Array.isArray(parsed)) {
+            importedConvs = parsed;
+        } else {
+            throw new Error("ファイル形式が無効です。");
+        }
+        
+        const mergedConversations = [...conversations];
+        const existingIds = new Set(conversations.map(c => c.id));
+
+        importedConvs.forEach(newConv => {
+            if (!existingIds.has(newConv.id)) {
+                mergedConversations.push(newConv);
+                existingIds.add(newConv.id);
+            }
+        });
+
+        updateConversations(mergedConversations);
+    } catch (e) {
+        throw new Error("JSONの解析に失敗しました。ファイルが破損している可能性があります。");
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -274,7 +335,14 @@ const AdminView: React.FC = () => {
   };
   
   const handleChangePassword = (e: React.FormEvent) => {
-      // ... (existing password change logic)
+    e.preventDefault();
+    const result = setPassword(newPassword, currentPassword);
+    setPasswordMessage({ text: result.message, type: result.success ? 'success' : 'error' });
+    if (result.success) {
+        setCurrentPassword('');
+        setNewPassword('');
+    }
+    setTimeout(() => setPasswordMessage(null), 4000);
   };
 
    const handleAddFromText = (newConversation: StoredConversation) => {
@@ -361,7 +429,6 @@ const AdminView: React.FC = () => {
                         Object.entries(groupedConversations).map(([userId, userConvs]) => (
                         <div key={userId} className="rounded-lg bg-slate-50 overflow-hidden border border-slate-200">
                             <button onClick={() => toggleUserGroup(userId)} className="w-full flex justify-between items-center text-left p-3 hover:bg-slate-100 transition-colors">
-                                {/* ... user group header ... */}
                                 <div className="flex-1 overflow-hidden pr-2">
                                     <p className="font-semibold text-slate-800 text-sm truncate">{userId}</p>
                                 </div>
@@ -400,12 +467,78 @@ const AdminView: React.FC = () => {
                     )}
                 </div>
             </section>
-            
-            {/* Other sections like AI Assistant management... */}
           </div>
            {/* Bottom control panel */}
-          <div className="mt-auto pt-4 border-t border-slate-200 space-y-3">
-             {/* ... Data Management and Security Settings sections ... */}
+          <div className="mt-auto pt-6 border-t border-slate-200 space-y-6">
+            <section>
+                <h3 className="text-md font-bold text-slate-700 mb-2 px-1">データ管理</h3>
+                <div className="grid grid-cols-2 gap-2">
+                    <button onClick={() => setIsAddTextModalOpen(true)} className="flex items-center justify-center gap-1.5 p-2 bg-slate-100 text-slate-700 font-semibold rounded-md hover:bg-slate-200 text-sm transition-colors">
+                        <PlusCircleIcon className="w-4 h-4" /> テキストから追加
+                    </button>
+                    <button onClick={handleImportClick} disabled={isImporting} className="flex items-center justify-center gap-1.5 p-2 bg-slate-100 text-slate-700 font-semibold rounded-md hover:bg-slate-200 text-sm transition-colors">
+                        <ImportIcon className="w-4 h-4" /> インポート
+                    </button>
+                    <button onClick={handleExport} className="flex items-center justify-center gap-1.5 p-2 bg-slate-100 text-slate-700 font-semibold rounded-md hover:bg-slate-200 text-sm transition-colors">
+                        <ExportIcon className="w-4 h-4" /> エクスポート
+                    </button>
+                    <button onClick={handleDeleteAllConversations} className="flex items-center justify-center gap-1.5 p-2 bg-red-100 text-red-700 font-semibold rounded-md hover:bg-red-200 text-sm transition-colors">
+                        <TrashIcon className="w-4 h-4" /> 全履歴を削除
+                    </button>
+                </div>
+            </section>
+            
+            <section>
+                <h3 className="text-md font-bold text-slate-700 mb-2 px-1">セキュリティ設定</h3>
+                <form onSubmit={handleChangePassword} className="space-y-2 p-3 bg-slate-100 rounded-lg">
+                    <div className="flex items-center gap-2">
+                        <KeyIcon className="w-4 h-4 text-slate-500" />
+                        <p className="text-sm font-semibold text-slate-600">パスワード変更</p>
+                    </div>
+                    <input
+                        type="password"
+                        placeholder="現在のパスワード"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        className="w-full p-2 text-sm border border-slate-300 rounded-md"
+                        required
+                    />
+                    <input
+                        type="password"
+                        placeholder="新しいパスワード (4文字以上)"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full p-2 text-sm border border-slate-300 rounded-md"
+                        required
+                    />
+                    <button type="submit" className="w-full p-2 bg-sky-600 text-white font-semibold rounded-md hover:bg-sky-700 text-sm">
+                        変更を保存
+                    </button>
+                    {passwordMessage && (
+                        <p className={`text-xs text-center font-semibold ${passwordMessage.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                            {passwordMessage.text}
+                        </p>
+                    )}
+                </form>
+            </section>
+            <section>
+                <h3 className="text-md font-bold text-slate-700 mb-2 px-1">AIアシスタント管理</h3>
+                <div className="space-y-2 max-h-40 overflow-y-auto p-2 bg-slate-100 rounded-lg">
+                    {ASSISTANTS.map(assistant => (
+                        <div key={assistant.id} className="p-3 bg-white rounded-lg shadow-sm border border-slate-200">
+                            <div className="flex items-start gap-3">
+                                <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200 flex-shrink-0">
+                                    {assistant.avatarComponent}
+                                </div>
+                                <div>
+                                    <p className="font-bold text-sm text-slate-800">{assistant.title}</p>
+                                    <p className="text-xs text-slate-500">{assistant.description}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
           </div>
         </aside>
 
@@ -467,7 +600,6 @@ const AdminView: React.FC = () => {
           isOpen={isShareModalOpen}
           onClose={() => { setIsShareModalOpen(false); setUserToShare(null); }}
           userId={userToShare}
-          // FIX: The 'conversations' prop was missing. Passing the specific user's conversations.
           conversations={groupedConversations[userToShare] || []}
           cache={userAnalysesCache[userToShare]}
         />

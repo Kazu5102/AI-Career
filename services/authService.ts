@@ -1,6 +1,6 @@
 
 const STORAGE_KEY = 'adminPassword_v1';
-const DEFAULT_PASSWORD = '5102';
+const DEFAULT_PASSWORD = '1234';
 
 export const getStoredPassword = (): string => {
     return localStorage.getItem(STORAGE_KEY) || DEFAULT_PASSWORD;
