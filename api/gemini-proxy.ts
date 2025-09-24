@@ -1,3 +1,4 @@
+
 // ===================================================================================
 //  This is a serverless function that acts as a secure proxy to the Gemini API.
 //  It is specifically adapted for Vercel's Node.js runtime environment.
@@ -83,6 +84,7 @@ interface LearningResource {
 }
 
 interface SkillMatchingResult {
+  keyTakeaways: string[];
   analysisSummary: string;
   recommendedRoles: RecommendedRole[];
   skillsToDevelop: SkillToDevelop[];
@@ -95,6 +97,7 @@ interface ConsultationEntry {
 }
 
 interface TrajectoryAnalysisData {
+    keyTakeaways: string[];
     userId: string;
     totalConsultations: number;
     consultations: ConsultationEntry[];
@@ -486,6 +489,11 @@ async function handleAnalyzeTrajectory(payload: { conversations: StoredConversat
     const trajectoryAnalysisSchema = {
         type: Type.OBJECT,
         properties: {
+            keyTakeaways: { 
+                type: Type.ARRAY, 
+                description: "この相談軌跡分析から得られる最も重要なハイライトを3つ箇条書きでまとめたもの。", 
+                items: { type: Type.STRING } 
+            },
             userId: { type: Type.STRING, description: "分析対象のユーザーID" },
             totalConsultations: { type: Type.NUMBER, description: "このユーザーの相談総数" },
             consultations: {
@@ -506,7 +514,7 @@ async function handleAnalyzeTrajectory(payload: { conversations: StoredConversat
             suggestedNextSteps: { type: Type.ARRAY, description: "このユーザーに対してコンサルタントが提案できる具体的な次のアクション (3-5個)", items: { type: Type.STRING } },
             overallSummary: { type: Type.STRING, description: "ユーザーの相談の変遷、成長、現在の状況をまとめたMarkdown形式の総括レポート" },
         },
-        required: ['userId', 'totalConsultations', 'consultations', 'keyThemes', 'detectedStrengths', 'areasForDevelopment', 'suggestedNextSteps', 'overallSummary'],
+        required: ['keyTakeaways', 'userId', 'totalConsultations', 'consultations', 'keyThemes', 'detectedStrengths', 'areasForDevelopment', 'suggestedNextSteps', 'overallSummary'],
     };
 
     const summariesText = conversations
@@ -522,17 +530,20 @@ async function handleAnalyzeTrajectory(payload: { conversations: StoredConversat
 
 ### **分析の指示**
 
-1.  **基本情報の抽出**:
+1.  **分析ハイライト (keyTakeaways)**:
+    *   まず最初に、このクライアントの相談軌跡全体から最も重要なインサイトや、コンサルタントが注目すべき点を3つの箇条書きで簡潔に抽出してください。
+
+2.  **基本情報の抽出**:
     *   相談の総数を特定してください。
     *   個々の相談について、相談日時と、サマリーの内容から推測されるおおよその相談時間（分単位）をリストアップしてください。
 
-2.  **深層分析**:
+3.  **深層分析**:
     *   **キーテーマの特定**: 複数の相談を通じて、繰り返し現れる中心的なテーマや悩み、関心事を3〜5つ抽出してください。
     *   **強みの発見**: クライアントが自覚している強みだけでなく、対話の端々から読み取れる潜在的な強みや資質を3〜5つ挙げてください。
     *   **成長領域の示唆**: クライアントが今後キャリアを築く上で、伸ばすと良いと思われるスキルや視点、経験すべき領域を3〜5つ提案してください。
     *   **次のステップの提案**: このクライアントの現状と希望を踏まえ、次にコンサルタントとして提案すべき具体的なアクションや問いかけを3〜5つ考えてください。
 
-3.  **総合サマリーの作成**:
+4.  **総合サマリーの作成**:
     *   上記の分析をすべて統合し、このクライアントのキャリア相談の旅路を物語るように、Markdown形式で総合的なサマリーを記述してください。初回相談時の状況から現在に至るまでの変化や成長、今後の課題などを明確に含めてください。
 
 ---
@@ -671,6 +682,11 @@ async function handlePerformSkillMatching(payload: { conversations: StoredConver
     const skillMatchingSchema = {
         type: Type.OBJECT,
         properties: {
+            keyTakeaways: { 
+                type: Type.ARRAY, 
+                description: "この適性診断レポートの最も重要なポイントを3つの箇条書きでまとめたもの。", 
+                items: { type: Type.STRING } 
+            },
             analysisSummary: { type: Type.STRING, description: "ユーザーの強み、興味、価値観を分析したMarkdown形式のサマリー。" },
             recommendedRoles: {
                 type: Type.ARRAY,
@@ -711,7 +727,7 @@ async function handlePerformSkillMatching(payload: { conversations: StoredConver
                 }
             }
         },
-        required: ['analysisSummary', 'recommendedRoles', 'skillsToDevelop', 'learningResources']
+        required: ['keyTakeaways', 'analysisSummary', 'recommendedRoles', 'skillsToDevelop', 'learningResources']
     };
 
     const summariesText = conversations
@@ -723,23 +739,26 @@ async function handlePerformSkillMatching(payload: { conversations: StoredConver
 以下に、一人のクライアントとの過去のキャリア相談セッションのサマリーが提供されます。
 これらの情報全体を深く分析し、クライアントの隠れた才能、興味、価値観を読み解いてください。
 
-最終的なアウトプットとして、クライアントの未来の可能性を広げるための、具体的でポジティブな「適性診断・スキルマッチングレポート」を、指定されたJSONスキーマに従って生成してください。
+最終的なアウトプアウトとして、クライアントの未来の可能性を広げるための、具体的でポジティブな「適性診断・スキルマッチングレポート」を、指定されたJSONスキーマに従って生成してください。
 
 ### **分析の指示**
 
-1.  **総合分析サマリー (analysisSummary)**:
+1.  **分析ハイライト (keyTakeaways)**:
+    *   まず最初に、このレポートを読むユーザー（相談者）にとって最も重要となるポイントを3つの箇条書きで簡潔に抽出してください。
+
+2.  **総合分析サマリー (analysisSummary)**:
     *   提供されたサマリー全体から、クライアントの強み、弱み、興味の方向性、仕事に対する価値観などを統合し、人物像を要約してください。Markdown形式で記述してください。
 
-2.  **推奨職種 (recommendedRoles)**:
+3.  **推奨職種 (recommendedRoles)**:
     *   分析した人物像に基づき、クライアントが活躍できそうな職種を3〜5つ提案してください。
     *   それぞれの職種について、なぜそれが適しているのかという理由を具体的に記述してください。
     *   クライアントとの適性度を、0から100の**マッチ度 (matchScore)**として数値で示してください。
 
-3.  **今後伸ばすべきスキル (skillsToDevelop)**:
+4.  **今後伸ばすべきスキル (skillsToDevelop)**:
     *   推奨した職種に到達するために、あるいは現在のキャリアをさらに発展させるために、学習・強化すると良い具体的なスキルをリストアップしてください。
     *   なぜそのスキルが重要なのか、理由も添えてください。
 
-4.  **学習リソースの提案 (learningResources)**:
+5.  **学習リソースの提案 (learningResources)**:
     *   上記のスキルを学ぶための、具体的なオンラインリソース（コース、記事、ビデオなど）を3〜5つ提案してください。
     *   リソースの種類（course, book, article, video）とURLを必ず含めてください。URLは架空のものではなく、実際にアクセス可能な有効なものを記載してください。
 

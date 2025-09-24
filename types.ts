@@ -1,3 +1,4 @@
+
 import type React from 'react';
 
 export const STORAGE_VERSION = 1;
@@ -78,6 +79,7 @@ export interface LearningResource {
 }
 
 export interface SkillMatchingResult {
+  keyTakeaways: string[];
   analysisSummary: string; // Markdown text
   recommendedRoles: RecommendedRole[];
   skillsToDevelop: SkillToDevelop[];
@@ -93,6 +95,7 @@ export interface ConsultationEntry {
 
 // 1. Trajectory Analysis
 export interface TrajectoryAnalysisData {
+    keyTakeaways: string[];
     userId: string;
     totalConsultations: number;
     consultations: ConsultationEntry[];

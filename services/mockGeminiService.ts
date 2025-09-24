@@ -1,3 +1,4 @@
+
 import { ChatMessage, StoredConversation, AnalysisData, AIType, TrajectoryAnalysisData, HiddenPotentialData, SkillMatchingResult } from '../types';
 
 // ===================================================================================
@@ -46,6 +47,11 @@ const sampleAnalysisData: AnalysisData = {
 };
 
 const sampleSkillMatchingResult: SkillMatchingResult = {
+    keyTakeaways: [
+        "高い学習意欲と協調性があなたの大きな強みです。",
+        "Web開発分野でのポテンシャルが非常に高いです。",
+        "チーム開発の基本スキルを身につけることが次のステップです。"
+    ],
     analysisSummary: `
 あなたは、**高い学習意欲**と**着実に物事を進める能力**を兼ね備えています。
 新しい技術や知識を積極的に学ぶ姿勢は、変化の速い現代のキャリア市場において非常に大きな強みとなります。
@@ -138,6 +144,11 @@ export const analyzeTrajectory = async (conversations: StoredConversation[], use
     console.log("[Mock] analyzeTrajectory called for user:", userId);
     await delay(2500);
     return {
+        keyTakeaways: [
+            "相談を通じて自己理解が着実に深まっている。",
+            "キャリアパスの不確実性が主要なテーマである。",
+            "次のステップとして具体的な行動計画の策定が有効。"
+        ],
         userId,
         totalConsultations: conversations.length,
         consultations: conversations.map(c => ({

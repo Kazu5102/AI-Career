@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { marked } from 'marked';
-import { AnalysisData, UserAnalysisCache, ChartDataPoint, ConsultationEntry } from '../types';
+import { AnalysisData, UserAnalysisCache, ChartDataPoint, ConsultationEntry, SkillMatchingResult, TrajectoryAnalysisData } from '../types';
 import DoughnutChart from './charts/DoughnutChart';
 import BarChartIcon from './icons/BarChartIcon';
 import PieChartIcon from './icons/PieChartIcon';
@@ -13,6 +14,8 @@ import BriefcaseIcon from './icons/BriefcaseIcon';
 import LightbulbIcon from './icons/LightbulbIcon';
 import LinkIcon from './icons/LinkIcon';
 import BrainIcon from './icons/BrainIcon';
+import SparklesIcon from './icons/SparklesIcon';
+
 
 interface AnalysisDisplayProps {
     cache: (UserAnalysisCache & { comprehensive?: AnalysisData }) | null | undefined;
@@ -26,12 +29,30 @@ const createMarkup = (markdownText: string | undefined) => {
 };
 
 // --- Reusable Card Components ---
-const MetricCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode; subValue?: string[] }> = ({ title, value, icon, subValue }) => (
+const KeyTakeawaysCard: React.FC<{ takeaways: string[] | undefined }> = ({ takeaways }) => {
+    if (!takeaways || takeaways.length === 0) {
+        return null;
+    }
+    return (
+        <div className="bg-sky-50 p-6 rounded-xl shadow-md border border-sky-200">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="bg-sky-100 text-sky-600 p-2 rounded-lg"><SparklesIcon /></div>
+                <h3 className="text-lg font-bold text-slate-800">分析ハイライト</h3>
+            </div>
+            <ul className="space-y-2 list-disc list-inside text-slate-700">
+                {takeaways.map((item, index) => <li key={index}>{item}</li>)}
+            </ul>
+        </div>
+    );
+};
+
+
+const MetricCard: React.FC<{ title: string; value: string | number | undefined; icon: React.ReactNode; subValue?: string[] }> = ({ title, value, icon, subValue }) => (
     <div className="bg-white p-4 rounded-xl shadow-md flex items-start gap-4">
         <div className="bg-sky-100 text-sky-600 p-3 rounded-lg">{icon}</div>
         <div>
             <p className="text-sm text-slate-500 font-medium">{title}</p>
-            <p className="text-2xl font-bold text-slate-800">{value}</p>
+            <p className="text-2xl font-bold text-slate-800">{value ?? 'N/A'}</p>
             {subValue && (
                 <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-1">
                     {subValue.map((item, index) => <span key={index} className="bg-slate-100 px-2 py-0.5 rounded-full">{item}</span>)}
@@ -41,22 +62,29 @@ const MetricCard: React.FC<{ title: string; value: string | number; icon: React.
     </div>
 );
 
-const ChartSection: React.FC<{ title: string; data: ChartDataPoint[]; icon: React.ReactNode }> = ({ title, data, icon }) => (
-    <div className="bg-white p-6 rounded-xl shadow-md">
-        <div className="flex items-center gap-3 mb-4"><div className="text-slate-500">{icon}</div><h3 className="text-lg font-bold text-slate-800">{title}</h3></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div className="relative h-48 w-48 mx-auto"><DoughnutChart labels={data.map(d => d.label)} data={data.map(d => d.value)} colors={chartColors} /></div>
-            <ul className="space-y-2 text-sm">{data.map((item, index) => <li key={item.label} className="flex items-center justify-between"><div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: chartColors[index % chartColors.length] }}></span><span className="text-slate-600">{item.label}</span></div><span className="font-semibold text-slate-800">{item.value.toFixed(1)}%</span></li>)}</ul>
+const ChartSection: React.FC<{ title: string; data: ChartDataPoint[] | undefined; icon: React.ReactNode }> = ({ title, data, icon }) => {
+    const chartData = data || [];
+    return (
+        <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className="flex items-center gap-3 mb-4"><div className="text-slate-500">{icon}</div><h3 className="text-lg font-bold text-slate-800">{title}</h3></div>
+            {chartData.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <div className="relative h-48 w-48 mx-auto"><DoughnutChart labels={chartData.map(d => d.label)} data={chartData.map(d => d.value)} colors={chartColors} /></div>
+                    <ul className="space-y-2 text-sm">{chartData.map((item, index) => <li key={item.label} className="flex items-center justify-between"><div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: chartColors[index % chartColors.length] }}></span><span className="text-slate-600">{item.label}</span></div><span className="font-semibold text-slate-800">{item.value.toFixed(1)}%</span></li>)}</ul>
+                </div>
+            ) : (
+                <p className="text-sm text-slate-500">チャートデータを生成できませんでした。</p>
+            )}
         </div>
-    </div>
-);
+    );
+};
 
 const InfoListCard: React.FC<{ title: string; items: string[] | undefined; icon: React.ReactNode; iconBgColor: string, iconColor: string }> = ({ title, items, icon, iconBgColor, iconColor }) => (
      <div className="bg-white p-6 rounded-xl shadow-md">
         <div className="flex items-center gap-3 mb-4"><div className={`p-2 rounded-lg ${iconBgColor} ${iconColor}`}>{icon}</div><h3 className="text-lg font-bold text-slate-800">{title}</h3></div>
         <div className="flex flex-wrap gap-2">
-            {(items || []).map(item => <span key={item} className="bg-slate-100 text-slate-700 text-sm font-medium px-3 py-1 rounded-full">{item}</span>)}
-            {(!items || items.length === 0) && <p className="text-sm text-slate-500">該当する項目はありませんでした。</p>}
+            {(items || []).length > 0 ? (items || []).map(item => <span key={item} className="bg-slate-100 text-slate-700 text-sm font-medium px-3 py-1 rounded-full">{item}</span>)
+             : <p className="text-sm text-slate-500">該当する項目はありませんでした。</p>}
         </div>
     </div>
 );
@@ -66,9 +94,10 @@ const ConsultationList: React.FC<{consultations: ConsultationEntry[] | undefined
 );
 
 // --- Section Components for Individual Analysis ---
-const TrajectorySection: React.FC<{ data: UserAnalysisCache['trajectory'] }> = ({ data }) => {
+const TrajectorySection: React.FC<{ data: TrajectoryAnalysisData | undefined }> = ({ data }) => {
     if (!data) return <div className="text-center text-slate-500 p-4">相談の軌跡分析はまだ実行されていません。</div>;
     return <div className="space-y-6">
+        <KeyTakeawaysCard takeaways={data.keyTakeaways} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><MetricCard title="相談件数" value={data.totalConsultations} icon={<BarChartIcon />} /></div>
         <ConsultationList consultations={data.consultations} />
         <InfoListCard title="キーテーマ" items={data.keyThemes} icon={<ChatIcon />} iconBgColor="bg-sky-100" iconColor="text-sky-600" />
@@ -79,9 +108,10 @@ const TrajectorySection: React.FC<{ data: UserAnalysisCache['trajectory'] }> = (
     </div>;
 };
 
-const SkillMatchingSection: React.FC<{ data: UserAnalysisCache['skillMatching'] }> = ({ data }) => {
+const SkillMatchingSection: React.FC<{ data: SkillMatchingResult | undefined }> = ({ data }) => {
     if (!data) return <div className="text-center text-slate-500 p-4">適性診断はまだ実行されていません。</div>;
     return <div className="space-y-6">
+        <KeyTakeawaysCard takeaways={data.keyTakeaways} />
         <div className="bg-white p-6 rounded-xl shadow-md"><h3 className="text-xl font-bold text-slate-800 border-b-2 border-slate-200 pb-2 mb-4">キャリアプロファイル分析</h3><article className="prose prose-slate max-w-none prose-sm" dangerouslySetInnerHTML={createMarkup(data.analysisSummary)} /></div>
         <div className="bg-white p-6 rounded-xl shadow-md"><div className="flex items-center gap-3 mb-4"><div className="bg-sky-100 text-sky-600 p-2 rounded-lg"><BriefcaseIcon /></div><h3 className="text-lg font-bold text-slate-800">推奨される職種</h3></div><div className="space-y-4">{(data.recommendedRoles || []).map(role => <div key={role.role} className="bg-slate-50 border border-slate-200 p-4 rounded-lg"><div className="flex justify-between items-start gap-4"><h4 className="font-bold text-md text-sky-800">{role.role}</h4><div className="text-right flex-shrink-0"><p className="text-xs text-slate-500">マッチ度</p><p className="font-bold text-lg text-sky-600">{role.matchScore}%</p></div></div><div className="w-full bg-slate-200 rounded-full h-2.5 my-2"><div className="bg-sky-500 h-2.5 rounded-full" style={{ width: `${role.matchScore}%` }}></div></div><p className="text-sm text-slate-600 mt-2">{role.reason}</p></div>)}</div></div>
         <div className="bg-white p-6 rounded-xl shadow-md"><div className="flex items-center gap-3 mb-4"><div className="bg-emerald-100 text-emerald-600 p-2 rounded-lg"><LightbulbIcon /></div><h3 className="text-lg font-bold text-slate-800">伸ばすと良いスキル</h3></div><div className="space-y-3">{(data.skillsToDevelop || []).map(skill => <div key={skill.skill} className="bg-slate-50 p-3 rounded-lg"><h4 className="font-semibold text-emerald-800">{skill.skill}</h4><p className="text-sm text-slate-600">{skill.reason}</p></div>)}</div></div>
@@ -102,22 +132,25 @@ const HiddenPotentialSection: React.FC<{ data: UserAnalysisCache['hiddenPotentia
 // --- Main Component ---
 const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ cache }) => {
     if (!cache) return <div className="text-center text-slate-500 p-4">分析データを表示する準備ができました。左のツールキットから分析を実行してください。</div>;
-
+    
     // Comprehensive Analysis View
     if (cache.comprehensive) {
         const data = cache.comprehensive;
+        const keyMetrics = data?.keyMetrics;
+        
         return (
             <div className="space-y-6">
+                 <KeyTakeawaysCard takeaways={data?.keyTakeaways} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <MetricCard title="総相談件数" value={data.keyMetrics.totalConsultations} icon={<BarChartIcon />} />
-                    <MetricCard title="主な業界" value={(data.keyMetrics.commonIndustries || [])[0] || 'N/A'} subValue={data.keyMetrics.commonIndustries || []} icon={<TrendingUpIcon />} />
+                    <MetricCard title="総相談件数" value={keyMetrics?.totalConsultations} icon={<BarChartIcon />} />
+                    <MetricCard title="主な業界" value={(keyMetrics?.commonIndustries || [])[0]} subValue={keyMetrics?.commonIndustries} icon={<TrendingUpIcon />} />
                 </div>
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    <ChartSection title="共通の悩み・課題" data={data.commonChallenges || []} icon={<PieChartIcon />} />
-                    <ChartSection title="キャリアにおける希望" data={data.careerAspirations || []} icon={<PieChartIcon />} />
+                    <ChartSection title="共通の悩み・課題" data={data?.commonChallenges} icon={<PieChartIcon />} />
+                    <ChartSection title="キャリアにおける希望" data={data?.careerAspirations} icon={<PieChartIcon />} />
                 </div>
-                <InfoListCard title="相談者によく見られる強み" items={data.commonStrengths} icon={<CheckIcon />} iconBgColor="bg-emerald-100" iconColor="text-emerald-600" />
-                <div className="bg-white p-6 rounded-xl shadow-md"><h3 className="text-lg font-bold text-slate-800 mb-4">総合的なインサイトと提言</h3><article className="prose prose-slate max-w-none" dangerouslySetInnerHTML={createMarkup(data.overallInsights)} /></div>
+                <InfoListCard title="相談者によく見られる強み" items={data?.commonStrengths} icon={<CheckIcon />} iconBgColor="bg-emerald-100" iconColor="text-emerald-600" />
+                <div className="bg-white p-6 rounded-xl shadow-md"><h3 className="text-lg font-bold text-slate-800 mb-4">総合的なインサイトと提言</h3><article className="prose prose-slate max-w-none" dangerouslySetInnerHTML={createMarkup(data?.overallInsights)} /></div>
             </div>
         );
     }
