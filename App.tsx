@@ -1,5 +1,5 @@
 
-
+// App.tsx - v2.0 - Forcing redeployment to clear stubborn cache.
 import React, { useState, useEffect } from 'react';
 import UserView from './views/UserView';
 import AdminView from './views/AdminView';
