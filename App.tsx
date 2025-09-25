@@ -6,6 +6,7 @@ import AdminView from './views/AdminView';
 import PasswordModal from './components/PasswordModal';
 import { checkPassword } from './services/authService';
 import { checkServerStatus } from './services/index';
+import UserSelectionView from './views/UserSelectionView';
 
 type AppMode = 'user' | 'admin';
 type ServerStatus = 'checking' | 'ok' | 'error';
@@ -14,6 +15,7 @@ const App: React.FC = () => {
     const [mode, setMode] = useState<AppMode>('user');
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [serverStatus, setServerStatus] = useState<ServerStatus>('checking');
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
     useEffect(() => {
         const verifyServer = async () => {
@@ -26,7 +28,22 @@ const App: React.FC = () => {
             }
         };
         verifyServer();
+        
+        const storedUserId = localStorage.getItem('currentUserId');
+        if (storedUserId) {
+            setCurrentUserId(storedUserId);
+        }
     }, []);
+
+    const handleUserSelect = (userId: string) => {
+        setCurrentUserId(userId);
+        localStorage.setItem('currentUserId', userId);
+    };
+
+    const handleSwitchUser = () => {
+        setCurrentUserId(null);
+        localStorage.removeItem('currentUserId');
+    };
 
     const handleSwitchToAdmin = () => {
         setIsPasswordModalOpen(true);
@@ -64,6 +81,13 @@ const App: React.FC = () => {
             </div>
         );
     };
+    
+    const renderUserContent = () => {
+        if (!currentUserId) {
+            return <UserSelectionView onUserSelect={handleUserSelect} />;
+        }
+        return <UserView userId={currentUserId} onSwitchUser={handleSwitchUser} />;
+    };
 
     return (
         <div className="flex flex-col min-h-screen font-sans bg-slate-100">
@@ -80,9 +104,9 @@ const App: React.FC = () => {
             
             <ServerStatusBanner />
 
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col items-center justify-center">
               {serverStatus === 'ok' ? (
-                  mode === 'user' ? <UserView /> : <AdminView />
+                  mode === 'user' ? renderUserContent() : <AdminView />
               ) : (
                   <div className="h-full flex-1 flex items-center justify-center text-slate-500 p-4 text-center">
                     {serverStatus === 'checking' && <p>サーバー接続待機中...</p>}
