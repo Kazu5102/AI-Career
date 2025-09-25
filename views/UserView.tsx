@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChatMessage, MessageAuthor, StoredConversation, StoredData, STORAGE_VERSION, AIType } from '../types';
 import { getStreamingChatResponse, generateSummary, reviseSummary } from '../services/index';
@@ -12,20 +13,15 @@ import UserDashboard from '../components/UserDashboard';
 import ActionFooter from '../components/ActionFooter';
 import { ASSISTANTS } from '../config/aiAssistants';
 
-const getUserId = (): string => {
-    let userId = localStorage.getItem('careerConsultingUserId');
-    if (!userId) {
-        userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        localStorage.setItem('careerConsultingUserId', userId);
-    }
-    return userId;
-};
+interface UserViewProps {
+  userId: string;
+  onSwitchUser: () => void;
+}
 
 type UserViewMode = 'loading' | 'dashboard' | 'avatarSelection' | 'chatting';
 
-const UserView: React.FC = () => {
+const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
   const [view, setView] = useState<UserViewMode>('loading');
-  const [userId] = useState<string>(getUserId());
   const [userConversations, setUserConversations] = useState<StoredConversation[]>([]);
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -361,6 +357,7 @@ const UserView: React.FC = () => {
                     onNewChat={handleNewChat}
                     onResume={handleResumeConversation} 
                     userId={userId}
+                    onSwitchUser={onSwitchUser}
                  />;
       case 'avatarSelection':
         return <AvatarSelectionView onSelect={handleAvatarSelected} />;

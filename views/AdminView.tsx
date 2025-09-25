@@ -110,7 +110,8 @@ const AdminView: React.FC = () => {
   
   // Update loading message for comprehensive analysis
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    // FIX: Changed NodeJS.Timeout to ReturnType<typeof setTimeout> for browser compatibility.
+    let interval: ReturnType<typeof setTimeout> | null = null;
     if (isAnalyzing) {
         let messageIndex = 0;
         setLoadingMessage(comprehensiveLoadingMessages[messageIndex]);
@@ -124,8 +125,9 @@ const AdminView: React.FC = () => {
     };
   }, [isAnalyzing]);
 
-  const groupedConversations = useMemo<GroupedConversations>(() => {
-    return conversations.reduce((acc, conv) => {
+  // FIX: Explicitly typed the `groupedConversations` constant and the `reduce` accumulator to resolve multiple downstream type inference errors.
+  const groupedConversations: GroupedConversations = useMemo(() => {
+    return conversations.reduce((acc: GroupedConversations, conv) => {
         const userId = conv.userId || `user_unknown_${conv.id}`;
         if (!acc[userId]) acc[userId] = [];
         acc[userId].push(conv);

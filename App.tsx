@@ -29,20 +29,14 @@ const App: React.FC = () => {
         };
         verifyServer();
         
-        const storedUserId = localStorage.getItem('currentUserId');
-        if (storedUserId) {
-            setCurrentUserId(storedUserId);
-        }
     }, []);
 
     const handleUserSelect = (userId: string) => {
         setCurrentUserId(userId);
-        localStorage.setItem('currentUserId', userId);
     };
 
     const handleSwitchUser = () => {
         setCurrentUserId(null);
-        localStorage.removeItem('currentUserId');
     };
 
     const handleSwitchToAdmin = () => {

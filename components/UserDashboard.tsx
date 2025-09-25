@@ -15,9 +15,10 @@ interface UserDashboardProps {
   onNewChat: () => void;
   onResume: (conversation: StoredConversation) => void;
   userId: string;
+  onSwitchUser: () => void;
 }
 
-const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat, onResume, userId }) => {
+const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat, onResume, userId, onSwitchUser }) => {
   const [selectedConversation, setSelectedConversation] = useState<StoredConversation | null>(null);
   const [isMatchingModalOpen, setIsMatchingModalOpen] = useState(false);
   const [skillMatchingResult, setSkillMatchingResult] = useState<SkillMatchingResult | null>(null);
@@ -88,9 +89,15 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
             <h1 className="text-2xl font-bold text-slate-800">
               あなたの相談履歴
             </h1>
-             <p className="text-sm text-slate-500 mt-1">過去の相談内容を確認したり、総合的な適性診断ができます。</p>
+             <p className="text-sm text-slate-500 mt-1 truncate">相談者ID: <span className="font-mono">{userId}</span></p>
           </div>
           <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <button
+                onClick={onSwitchUser}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow-sm hover:bg-slate-300 transition-all duration-200"
+              >
+                相談者を切り替える
+            </button>
             <button
                 onClick={handleRunSkillMatching}
                 disabled={isMatching || conversations.length === 0}
@@ -105,18 +112,20 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
             >
               新しい相談を始める
             </button>
+          </div>
+        </header>
+
+        <main className="pt-4">
+          <div className="flex justify-end mb-2">
             <button
               onClick={handleExportUserData}
               disabled={conversations.length === 0}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-600 text-white font-semibold rounded-lg shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-opacity-75 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-slate-600 text-white font-semibold rounded-lg shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-opacity-75 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
             >
                 <ExportIcon />
                 管理者へデータ提出
             </button>
           </div>
-        </header>
-
-        <main className="pt-4">
           {conversations.length > 0 ? (
             <div className="space-y-2">
               {[...conversations].reverse().map(conv => (

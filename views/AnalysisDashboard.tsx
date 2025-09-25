@@ -26,7 +26,8 @@ const AnalysisDashboard: React.FC<Props> = ({ conversations, onNewChat }) => {
   const [loadingMessage, setLoadingMessage] = useState(loadingMessages[0]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    // FIX: Changed NodeJS.Timeout to ReturnType<typeof setTimeout> for browser compatibility.
+    let interval: ReturnType<typeof setTimeout> | null = null;
     if (isAnalyzing) {
         let messageIndex = 0;
         interval = setInterval(() => {
