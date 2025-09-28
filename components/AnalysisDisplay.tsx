@@ -115,7 +115,30 @@ const SkillMatchingSection: React.FC<{ data: SkillMatchingResult | undefined }> 
         <div className="bg-white p-6 rounded-xl shadow-md"><h3 className="text-xl font-bold text-slate-800 border-b-2 border-slate-200 pb-2 mb-4">キャリアプロファイル分析</h3><article className="prose prose-slate max-w-none prose-sm" dangerouslySetInnerHTML={createMarkup(data.analysisSummary)} /></div>
         <div className="bg-white p-6 rounded-xl shadow-md"><div className="flex items-center gap-3 mb-4"><div className="bg-sky-100 text-sky-600 p-2 rounded-lg"><BriefcaseIcon /></div><h3 className="text-lg font-bold text-slate-800">推奨される職種</h3></div><div className="space-y-4">{(data.recommendedRoles || []).map(role => <div key={role.role} className="bg-slate-50 border border-slate-200 p-4 rounded-lg"><div className="flex justify-between items-start gap-4"><h4 className="font-bold text-md text-sky-800">{role.role}</h4><div className="text-right flex-shrink-0"><p className="text-xs text-slate-500">マッチ度</p><p className="font-bold text-lg text-sky-600">{role.matchScore}%</p></div></div><div className="w-full bg-slate-200 rounded-full h-2.5 my-2"><div className="bg-sky-500 h-2.5 rounded-full" style={{ width: `${role.matchScore}%` }}></div></div><p className="text-sm text-slate-600 mt-2">{role.reason}</p></div>)}</div></div>
         <div className="bg-white p-6 rounded-xl shadow-md"><div className="flex items-center gap-3 mb-4"><div className="bg-emerald-100 text-emerald-600 p-2 rounded-lg"><LightbulbIcon /></div><h3 className="text-lg font-bold text-slate-800">伸ばすと良いスキル</h3></div><div className="space-y-3">{(data.skillsToDevelop || []).map(skill => <div key={skill.skill} className="bg-slate-50 p-3 rounded-lg"><h4 className="font-semibold text-emerald-800">{skill.skill}</h4><p className="text-sm text-slate-600">{skill.reason}</p></div>)}</div></div>
-        <div className="bg-white p-6 rounded-xl shadow-md"><div className="flex items-center gap-3 mb-4"><div className="bg-violet-100 text-violet-600 p-2 rounded-lg"><LinkIcon /></div><h3 className="text-lg font-bold text-slate-800">おすすめ学習リソース</h3></div><div className="space-y-2">{(data.learningResources || []).map(res => <a href={res.url} target="_blank" rel="noopener noreferrer" key={res.title} className="block bg-slate-50 p-3 rounded-lg hover:bg-slate-100 group"><div className="flex items-center justify-between"><h4 className="font-semibold text-violet-800 group-hover:underline">{res.title}</h4><span className="text-xs font-medium bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">{res.type}</span></div></a>)}</div></div>
+        <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="bg-violet-100 text-violet-600 p-2 rounded-lg"><LinkIcon /></div>
+                <h3 className="text-lg font-bold text-slate-800">おすすめ学習リソース</h3>
+            </div>
+            <p className="text-xs text-slate-500 bg-slate-100 p-2 rounded-md mb-4">
+                リンク切れを防ぎ、常に最新の情報にアクセスできるよう、直接のリンクの代わりに検索リンクを提供しています。タイトルと提供元をご確認の上、公式サイトからアクセスしてください。
+            </p>
+            <div className="space-y-2">
+                {(data.learningResources || []).map(res => {
+                    const searchQuery = encodeURIComponent(`${res.provider} ${res.title}`);
+                    const searchUrl = `https://www.google.com/search?q=${searchQuery}`;
+                    return (
+                        <a href={searchUrl} target="_blank" rel="noopener noreferrer" key={res.title} className="block bg-slate-50 p-3 rounded-lg hover:bg-slate-100 group">
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-semibold text-violet-800 group-hover:underline">{res.title}</h4>
+                                <span className="text-xs font-medium bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">{res.type}</span>
+                            </div>
+                            <p className="text-sm text-slate-600 mt-1">提供元: <span className="font-semibold">{res.provider}</span></p>
+                        </a>
+                    );
+                })}
+            </div>
+        </div>
     </div>;
 };
 

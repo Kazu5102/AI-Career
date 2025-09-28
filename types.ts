@@ -75,7 +75,7 @@ export interface SkillToDevelop {
 export interface LearningResource {
   title: string;
   type: 'course' | 'book' | 'article' | 'video';
-  url: string;
+  provider: string;
 }
 
 export interface SkillMatchingResult {

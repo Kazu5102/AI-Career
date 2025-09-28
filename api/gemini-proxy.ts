@@ -80,7 +80,7 @@ interface SkillToDevelop {
 interface LearningResource {
   title: string;
   type: 'course' | 'book' | 'article' | 'video';
-  url: string;
+  provider: string;
 }
 
 interface SkillMatchingResult {
@@ -715,15 +715,15 @@ async function handlePerformSkillMatching(payload: { conversations: StoredConver
             },
             learningResources: {
                 type: Type.ARRAY,
-                description: "スキル習得に役立つ具体的な学習リソース（オンラインコース、書籍、記事など）のリスト。",
+                description: "スキル習得に役立つ具体的な学習リソース（オンラインコース、書籍、記事など）のリスト。URLは含めず、リソースの正式名称と提供元プラットフォーム名を指定してください。",
                 items: {
                     type: Type.OBJECT,
                     properties: {
-                        title: { type: Type.STRING, description: "リソースのタイトル。" },
+                        title: { type: Type.STRING, description: "リソースの正式名称。" },
                         type: { type: Type.STRING, enum: ['course', 'book', 'article', 'video'], description: "リソースの種類。" },
-                        url: { type: Type.STRING, description: "リソースへのアクセスURL。" }
+                        provider: { type: Type.STRING, description: "リソースの提供元プラットフォーム名 (例: Udemy, Progate, 公式ドキュメント, YouTube)。" }
                     },
-                    required: ['title', 'type', 'url']
+                    required: ['title', 'type', 'provider']
                 }
             }
         },
@@ -760,7 +760,8 @@ async function handlePerformSkillMatching(payload: { conversations: StoredConver
 
 5.  **学習リソースの提案 (learningResources)**:
     *   上記のスキルを学ぶための、具体的なオンラインリソース（コース、記事、ビデオなど）を3〜5つ提案してください。
-    *   リソースの種類（course, book, article, video）とURLを必ず含めてください。URLは架空のものではなく、実際にアクセス可能な有効なものを記載してください。
+    *   リソースの種類（course, book, article, video）と、**リソースの正式名称(title)、提供元プラットフォーム名(provider)を必ず含めてください。**
+    *   **注意: URLは絶対に生成しないでください。**
 
 ---
 【分析対象のサマリー群】

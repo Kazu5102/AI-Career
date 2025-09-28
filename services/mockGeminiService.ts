@@ -67,8 +67,8 @@ const sampleSkillMatchingResult: SkillMatchingResult = {
         { skill: 'クラウドサービスの基礎知識 (AWS/GCP)', reason: '現代のWebサービス開発に不可欠なインフラ知識です。' },
     ],
     learningResources: [
-        { title: 'Progate - Gitコース', type: 'course', url: 'https://prog-8.com/' },
-        { title: 'Udemy - AWS認定クラウドプラクティショナー講座', type: 'course', url: 'https://www.udemy.com/' },
+        { title: 'Gitコース', type: 'course', provider: 'Progate' },
+        { title: 'AWS認定クラウドプラクティショナー講座', type: 'course', provider: 'Udemy' },
     ],
 };
 

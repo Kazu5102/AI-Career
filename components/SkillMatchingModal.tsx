@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { marked } from 'marked';
 import { SkillMatchingResult } from '../types';
@@ -126,15 +127,23 @@ const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose
                 <div className="bg-violet-100 text-violet-600 p-2 rounded-lg"><LinkIcon /></div>
                 <h3 className="text-xl font-bold text-slate-800">おすすめ学習リソース</h3>
               </div>
+              <p className="text-xs text-slate-500 bg-slate-100 p-2 rounded-md mb-4">
+                リンク切れを防ぎ、常に最新の情報にアクセスできるよう、直接のリンクの代わりに検索リンクを提供しています。タイトルと提供元をご確認の上、公式サイトからアクセスしてください。
+              </p>
               <div className="space-y-2">
-                {result.learningResources.map(resource => (
-                  <a href={resource.url} target="_blank" rel="noopener noreferrer" key={resource.title} className="block bg-slate-50 p-3 rounded-lg hover:bg-slate-100 hover:shadow-sm transition-all border border-slate-200 group">
+                {result.learningResources.map(resource => {
+                  const searchQuery = encodeURIComponent(`${resource.provider} ${resource.title}`);
+                  const searchUrl = `https://www.google.com/search?q=${searchQuery}`;
+                  return (
+                  <a href={searchUrl} target="_blank" rel="noopener noreferrer" key={resource.title} className="block bg-slate-50 p-3 rounded-lg hover:bg-slate-100 hover:shadow-sm transition-all border border-slate-200 group">
                     <div className="flex items-center justify-between">
                        <h4 className="font-semibold text-violet-800 group-hover:underline">{resource.title}</h4>
                        <span className="text-xs font-medium bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">{resource.type}</span>
                     </div>
+                    <p className="text-sm text-slate-600 mt-1">提供元: <span className="font-semibold">{resource.provider}</span></p>
                   </a>
-                ))}
+                  );
+                })}
               </div>
             </section>
 
