@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChatMessage, MessageAuthor, StoredConversation, StoredData, STORAGE_VERSION, AIType } from '../types';
 import { getStreamingChatResponse, generateSummary, reviseSummary } from '../services/index';
@@ -343,6 +344,72 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
     setView('chatting');
   };
 
+  const handleDeleteHistory = () => {
+    if (window.confirm("本当にすべての相談履歴をリセットしますか？この操作は取り消せません。意図しないデータが混入した場合の利用を想定しています。")) {
+        try {
+            const storedDataRaw = localStorage.getItem('careerConsultations');
+            let allConversations: StoredConversation[] = [];
+            if (storedDataRaw) {
+                const parsed = JSON.parse(storedDataRaw);
+                let dataToProcess: any[] | null = null;
+                if (parsed && typeof parsed === 'object' && 'version' in parsed && Array.isArray(parsed.data)) {
+                    dataToProcess = parsed.data;
+                } else if (Array.isArray(parsed)) {
+                    dataToProcess = parsed;
+                }
+                if (dataToProcess) {
+                    allConversations = dataToProcess as StoredConversation[];
+                }
+            }
+            
+            const remainingConversations = allConversations.filter(c => c.userId !== userId);
+            
+            saveConversations(remainingConversations);
+            
+            setUserConversations([]);
+            
+            alert('相談履歴がリセットされました。');
+
+        } catch (error) {
+            console.error("Failed to delete user history:", error);
+            alert("履歴のリセット中にエラーが発生しました。");
+        }
+    }
+  };
+  
+  const handleDeleteConversation = (conversationId: number) => {
+    if (window.confirm("この相談履歴を本当に削除しますか？この操作は取り消せません。")) {
+        try {
+            const storedDataRaw = localStorage.getItem('careerConsultations');
+            let allConversations: StoredConversation[] = [];
+            if (storedDataRaw) {
+                const parsed = JSON.parse(storedDataRaw);
+                let dataToProcess: any[] | null = null;
+                if (parsed && typeof parsed === 'object' && 'version' in parsed && Array.isArray(parsed.data)) {
+                    dataToProcess = parsed.data;
+                } else if (Array.isArray(parsed)) {
+                    dataToProcess = parsed;
+                }
+                if (dataToProcess) {
+                    allConversations = dataToProcess as StoredConversation[];
+                }
+            }
+            
+            const remainingConversations = allConversations.filter(c => c.id !== conversationId);
+            
+            saveConversations(remainingConversations);
+            
+            const updatedUserConversations = userConversations.filter(c => c.id !== conversationId);
+            setUserConversations(updatedUserConversations);
+            
+            alert('相談履歴が削除されました。');
+
+        } catch (error) {
+            console.error("Failed to delete conversation:", error);
+            alert("履歴の削除中にエラーが発生しました。");
+        }
+    }
+  };
 
   const renderContent = () => {
     switch(view) {
@@ -356,6 +423,8 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
                     userId={userId}
                     nickname={nickname}
                     onSwitchUser={onSwitchUser}
+                    onDeleteHistory={handleDeleteHistory}
+                    onDeleteConversation={handleDeleteConversation}
                  />;
       case 'avatarSelection':
         return <AvatarSelectionView onSelect={handleAvatarSelected} />;

@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState } from 'react';
 import { StoredConversation, SkillMatchingResult, STORAGE_VERSION, StoredData } from '../types';
 import ConversationDetailModal from './ConversationDetailModal';
@@ -8,6 +10,7 @@ import { performSkillMatching } from '../services/index';
 import TargetIcon from './icons/TargetIcon';
 import PlayIcon from './icons/PlayIcon';
 import ExportIcon from './icons/ExportIcon';
+import TrashIcon from './icons/TrashIcon';
 
 
 interface UserDashboardProps {
@@ -17,9 +20,11 @@ interface UserDashboardProps {
   userId: string;
   nickname: string;
   onSwitchUser: () => void;
+  onDeleteHistory: () => void;
+  onDeleteConversation: (conversationId: number) => void;
 }
 
-const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat, onResume, userId, nickname, onSwitchUser }) => {
+const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat, onResume, userId, nickname, onSwitchUser, onDeleteHistory, onDeleteConversation }) => {
   const [selectedConversation, setSelectedConversation] = useState<StoredConversation | null>(null);
   const [isMatchingModalOpen, setIsMatchingModalOpen] = useState(false);
   const [skillMatchingResult, setSkillMatchingResult] = useState<SkillMatchingResult | null>(null);
@@ -117,7 +122,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
         </header>
 
         <main className="pt-4">
-          <div className="flex justify-end mb-2">
+          <div className="flex justify-end mb-2 gap-2">
             <button
               onClick={handleExportUserData}
               disabled={conversations.length === 0}
@@ -126,13 +131,21 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
                 <ExportIcon />
                 管理者へデータ提出
             </button>
+            <button
+              onClick={onDeleteHistory}
+              disabled={conversations.length === 0}
+              className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-red-100 text-red-700 font-semibold rounded-lg shadow-md hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75 transition-all duration-200 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed"
+            >
+                <TrashIcon />
+                全履歴をリセット
+            </button>
           </div>
           {conversations.length > 0 ? (
             <div className="space-y-2">
               {[...conversations].reverse().map(conv => (
                 <div
                   key={conv.id}
-                  className="w-full text-left p-3 rounded-lg hover:bg-slate-100 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-sky-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"
+                  className="w-full text-left p-3 rounded-lg hover:bg-slate-100 transition-colors duration-150 focus:outline-none focus-within:ring-2 focus-within:ring-sky-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"
                 >
                   <div className="flex-grow cursor-pointer" onClick={() => setSelectedConversation(conv)}>
                     <div className="font-semibold text-slate-700 flex items-center gap-2">
@@ -141,15 +154,26 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
                     </div>
                     <p className="text-sm text-slate-500">担当AI: {conv.aiName}{getAITypeDisplay(conv)}</p>
                   </div>
-                  {conv.status === 'interrupted' && (
-                    <button 
-                      onClick={() => onResume(conv)}
-                      className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center gap-2 mt-2 sm:mt-0 px-4 py-2 bg-emerald-100 text-emerald-800 font-semibold rounded-lg hover:bg-emerald-200 transition-colors"
+                  
+                  <div className="flex-shrink-0 flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                    {conv.status === 'interrupted' && (
+                      <button 
+                        onClick={() => onResume(conv)}
+                        className="w-full sm:w-auto flex-grow flex items-center justify-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-800 font-semibold rounded-lg hover:bg-emerald-200 transition-colors"
+                      >
+                        <PlayIcon />
+                        続きから再開する
+                      </button>
+                    )}
+                    <button
+                      onClick={() => onDeleteConversation(conv.id)}
+                      className="p-2 rounded-full text-slate-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+                      title="この履歴を削除"
                     >
-                      <PlayIcon />
-                      続きから再開する
+                      <TrashIcon className="w-5 h-5" />
                     </button>
-                  )}
+                  </div>
+
                 </div>
               ))}
             </div>

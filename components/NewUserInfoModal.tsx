@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { UserInfo } from '../types';
 import CheckIcon from './icons/CheckIcon';
@@ -43,7 +42,7 @@ const NewUserInfoModal: React.FC<NewUserInfoModalProps> = ({ isOpen, user, onCon
               onClick={onConfirm}
               className="w-full px-4 py-3 font-semibold rounded-lg transition-all duration-200 bg-sky-600 text-white hover:bg-sky-700"
             >
-              はい、覚えました
+              相談を始める
             </button>
         </div>
       </div>
