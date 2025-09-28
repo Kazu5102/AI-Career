@@ -43,7 +43,7 @@ const NewUserInfoModal: React.FC<NewUserInfoModalProps> = ({ isOpen, user, onCon
               onClick={onConfirm}
               className="w-full px-4 py-3 font-semibold rounded-lg transition-all duration-200 bg-sky-600 text-white hover:bg-sky-700"
             >
-              OK、相談を始める
+              はい、覚えました
             </button>
         </div>
       </div>
