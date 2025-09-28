@@ -2,6 +2,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChatMessage, MessageAuthor, StoredConversation, StoredData, STORAGE_VERSION, AIType } from '../types';
 import { getStreamingChatResponse, generateSummary, reviseSummary } from '../services/index';
+import { getUserById } from '../services/userService';
 import Header from '../components/Header';
 import ChatWindow from '../components/ChatWindow';
 import ChatInput from '../components/ChatInput';
@@ -23,6 +24,7 @@ type UserViewMode = 'loading' | 'dashboard' | 'avatarSelection' | 'chatting';
 const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
   const [view, setView] = useState<UserViewMode>('loading');
   const [userConversations, setUserConversations] = useState<StoredConversation[]>([]);
+  const [nickname, setNickname] = useState<string>('');
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -40,6 +42,11 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
 
 
   useEffect(() => {
+    // Fetch user nickname
+    const user = getUserById(userId);
+    setNickname(user?.nickname || userId);
+
+    // Fetch conversations
     const allDataRaw = localStorage.getItem('careerConsultations');
     let convs: StoredConversation[] = [];
     if (allDataRaw) {
@@ -106,16 +113,6 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
     
     const greetingMessage: ChatMessage = { author: MessageAuthor.AI, text: greetingText };
     setMessages([greetingMessage]);
-
-    // Application asks for the user's name after a short delay
-    setTimeout(() => {
-      const questions = type === 'human'
-        ? ["差し支えなければ、どのようにお呼びすればよろしいですか？", "今後のため、お名前の呼び方を教えていただけますか？"]
-        : ["キミのこと、なんて呼んだらいいかな？", "よかったら、キミの呼び名を教えてくれるワン？"];
-      const questionText = questions[Math.floor(Math.random() * questions.length)];
-      const questionMessage: ChatMessage = { author: MessageAuthor.AI, text: questionText };
-      setMessages(prev => [...prev, questionMessage]);
-    }, 1200);
 
     setIsConsultationReady(false);
     setEditingState(null);
@@ -186,7 +183,7 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
           });
       }
       
-      if (currentMessages.filter(m => m.author === MessageAuthor.USER).length >= 2) {
+      if (currentMessages.filter(m => m.author === MessageAuthor.USER).length >= 1) {
         setIsConsultationReady(true);
       }
 
@@ -342,7 +339,7 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
     setAiType(conversationToResume.aiType);
     setAiAvatarKey(conversationToResume.aiAvatar);
     setResumingConversationId(conversationToResume.id);
-    setIsConsultationReady(conversationToResume.messages.filter(m => m.author === MessageAuthor.USER).length >= 2);
+    setIsConsultationReady(conversationToResume.messages.filter(m => m.author === MessageAuthor.USER).length >= 1);
     setView('chatting');
   };
 
@@ -357,6 +354,7 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
                     onNewChat={handleNewChat}
                     onResume={handleResumeConversation} 
                     userId={userId}
+                    nickname={nickname}
                     onSwitchUser={onSwitchUser}
                  />;
       case 'avatarSelection':

@@ -8,6 +8,15 @@ export interface StoredData {
   data: StoredConversation[];
 }
 
+// --- NEW ---
+// User information for authentication and display
+export interface UserInfo {
+  id: string;      // Unique identifier, e.g., 'user_17...'
+  nickname: string; // Auto-generated memorable name, e.g., 'Brave Lion'
+  pin: string;     // 4-digit PIN for authentication
+}
+// --- END NEW ---
+
 export enum MessageAuthor {
   USER = 'user',
   AI = 'ai',

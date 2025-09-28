@@ -15,10 +15,11 @@ interface UserDashboardProps {
   onNewChat: () => void;
   onResume: (conversation: StoredConversation) => void;
   userId: string;
+  nickname: string;
   onSwitchUser: () => void;
 }
 
-const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat, onResume, userId, onSwitchUser }) => {
+const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat, onResume, userId, nickname, onSwitchUser }) => {
   const [selectedConversation, setSelectedConversation] = useState<StoredConversation | null>(null);
   const [isMatchingModalOpen, setIsMatchingModalOpen] = useState(false);
   const [skillMatchingResult, setSkillMatchingResult] = useState<SkillMatchingResult | null>(null);
@@ -87,9 +88,9 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-200">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">
-              あなたの相談履歴
+              {nickname}さんの相談履歴
             </h1>
-             <p className="text-sm text-slate-500 mt-1 truncate">相談者ID: <span className="font-mono">{userId}</span></p>
+             <p className="text-sm text-slate-500 mt-1 truncate" title={userId}>相談者ID: <span className="font-mono">{userId}</span></p>
           </div>
           <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <button
