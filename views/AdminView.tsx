@@ -1,7 +1,7 @@
 
 // AdminView.tsx - v1.3 - Forcing redeployment with aggressive cache control.
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { StoredConversation, StoredData, STORAGE_VERSION, AnalysisData, AIAssistant, UserAnalysisCache, TrajectoryAnalysisData, SkillMatchingResult, HiddenPotentialData } from '../types';
+import { StoredConversation, StoredData, STORAGE_VERSION, AnalysisData, AIAssistant, UserAnalysisCache, TrajectoryAnalysisData, SkillMatchingResult, HiddenPotentialData, AnalysisType, IndividualAnalysisState } from '../types';
 import { analyzeConversations, generateSummaryFromText, analyzeTrajectory, performSkillMatching, findHiddenPotential } from '../services/index';
 import { setPassword } from '../services/authService';
 import ConversationDetailModal from '../components/ConversationDetailModal';
@@ -30,12 +30,6 @@ const comprehensiveLoadingMessages = [
     'インサイトをまとめています...',
     'レポートを生成しています。もうしばらくお待ちください。'
 ];
-
-type AnalysisType = 'trajectory' | 'skillMatching' | 'hiddenPotential';
-type AnalysisStatus = 'idle' | 'loading' | 'error';
-type IndividualAnalysisState = {
-    [key in AnalysisType]?: AnalysisStatus;
-};
 
 const AdminView: React.FC = () => {
   const [conversations, setConversations] = useState<StoredConversation[]>([]);
@@ -579,7 +573,7 @@ const AdminView: React.FC = () => {
                       <button onClick={analyzedUserId ? () => setAnalyzedUserId(null) : () => setError(null)} className="mt-4 px-3 py-1 bg-red-100 rounded-md">閉じる</button>
                   </div>
               ) : analyzedUserId ? (
-                  <AnalysisDisplay cache={userAnalysesCache[analyzedUserId]} />
+                  <AnalysisDisplay cache={userAnalysesCache[analyzedUserId]} loadingStates={individualAnalysisStates[analyzedUserId]} />
               ) : analysisData ? (
                   <AnalysisDisplay cache={{ comprehensive: analysisData }} />
               ) : (

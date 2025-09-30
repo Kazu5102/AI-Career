@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { marked } from 'marked';
-import { AnalysisData, UserAnalysisCache, ChartDataPoint, ConsultationEntry, SkillMatchingResult, TrajectoryAnalysisData } from '../types';
+import { AnalysisData, UserAnalysisCache, ChartDataPoint, ConsultationEntry, SkillMatchingResult, TrajectoryAnalysisData, IndividualAnalysisState } from '../types';
 import DoughnutChart from './charts/DoughnutChart';
 import BarChartIcon from './icons/BarChartIcon';
 import PieChartIcon from './icons/PieChartIcon';
@@ -19,6 +19,7 @@ import SparklesIcon from './icons/SparklesIcon';
 
 interface AnalysisDisplayProps {
     cache: (UserAnalysisCache & { comprehensive?: AnalysisData }) | null | undefined;
+    loadingStates?: IndividualAnalysisState;
 }
 
 const chartColors = [ '#0ea5e9', '#34d399', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1' ];
@@ -153,7 +154,19 @@ const HiddenPotentialSection: React.FC<{ data: UserAnalysisCache['hiddenPotentia
 };
 
 // --- Main Component ---
-const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ cache }) => {
+const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ cache, loadingStates }) => {
+    const isAnyLoading = loadingStates && Object.values(loadingStates).some(s => s === 'loading');
+
+    if (isAnyLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-slate-600 text-center">
+                <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+                <p className="text-lg font-semibold">AIが分析中です...</p>
+                <p className="text-sm text-slate-500 mt-2">結果が表示されるまでしばらくお待ちください。</p>
+            </div>
+        );
+    }
+
     if (!cache) return <div className="text-center text-slate-500 p-4">分析データを表示する準備ができました。左のツールキットから分析を実行してください。</div>;
     
     // Comprehensive Analysis View

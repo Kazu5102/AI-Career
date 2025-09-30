@@ -126,3 +126,10 @@ export interface UserAnalysisCache {
     skillMatching?: SkillMatchingResult;
     hiddenPotential?: HiddenPotentialData;
 }
+
+// --- NEW TYPES FOR INDIVIDUAL ANALYSIS STATE MANAGEMENT ---
+export type AnalysisType = 'trajectory' | 'skillMatching' | 'hiddenPotential';
+export type AnalysisStatus = 'idle' | 'loading' | 'error';
+export type IndividualAnalysisState = {
+    [key in AnalysisType]?: AnalysisStatus;
+};
