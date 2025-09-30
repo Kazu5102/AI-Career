@@ -8,6 +8,7 @@ import { performSkillMatching } from '../services/index';
 import TargetIcon from './icons/TargetIcon';
 import PlayIcon from './icons/PlayIcon';
 import ExportIcon from './icons/ExportIcon';
+import ExportSuccessModal from './ExportSuccessModal';
 
 
 interface UserDashboardProps {
@@ -25,6 +26,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
   const [skillMatchingResult, setSkillMatchingResult] = useState<SkillMatchingResult | null>(null);
   const [isMatching, setIsMatching] = useState(false);
   const [matchingError, setMatchingError] = useState<string | null>(null);
+  const [isExportSuccessModalOpen, setIsExportSuccessModalOpen] = useState(false);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ja-JP', {
@@ -80,6 +82,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      setIsExportSuccessModalOpen(true);
   };
 
   return (
@@ -181,6 +184,11 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
         result={skillMatchingResult}
         isLoading={isMatching}
         error={matchingError}
+      />
+
+      <ExportSuccessModal 
+        isOpen={isExportSuccessModalOpen}
+        onClose={() => setIsExportSuccessModalOpen(false)}
       />
     </>
   );
