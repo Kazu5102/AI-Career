@@ -100,8 +100,6 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
               console.error('Speech recognition error:', event.error);
               if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
                 setMicError('マイクの使用が許可されていません。ブラウザの設定を確認してください。');
-              } else if (event.error === 'no-speech') {
-                setMicError('音声が検出されませんでした。もう一度お試しください。');
               } else {
                 setMicError('音声認識エラーが発生しました。');
               }
