@@ -1,4 +1,3 @@
-
 // AdminView.tsx - v1.3 - Forcing redeployment with aggressive cache control.
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { StoredConversation, StoredData, STORAGE_VERSION, AnalysisData, AIAssistant, UserAnalysisCache, TrajectoryAnalysisData, SkillMatchingResult, HiddenPotentialData, AnalysisType, IndividualAnalysisState } from '../types';
@@ -573,7 +572,15 @@ const AdminView: React.FC = () => {
                       <button onClick={analyzedUserId ? () => setAnalyzedUserId(null) : () => setError(null)} className="mt-4 px-3 py-1 bg-red-100 rounded-md">閉じる</button>
                   </div>
               ) : analyzedUserId ? (
-                  <AnalysisDisplay cache={userAnalysesCache[analyzedUserId]} loadingStates={individualAnalysisStates[analyzedUserId]} />
+                  isAnyIndividualAnalysisLoading ? (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-600 text-center">
+                        <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+                        <p className="text-lg font-semibold">AIが分析中です...</p>
+                        <p className="text-sm text-slate-500 mt-2">選択した項目の分析レポートを生成しています。</p>
+                    </div>
+                  ) : (
+                    <AnalysisDisplay cache={userAnalysesCache[analyzedUserId]} />
+                  )
               ) : analysisData ? (
                   <AnalysisDisplay cache={{ comprehensive: analysisData }} />
               ) : (
