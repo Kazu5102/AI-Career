@@ -161,7 +161,7 @@ const AdminView: React.FC = () => {
     
     setIndividualAnalysisStates(prev => ({
         ...prev,
-        [userId]: { ...prev[userId], [type]: 'loading' }
+        [userId]: { ...(prev[userId] || {}), [type]: 'loading' }
     }));
     setAnalyzedUserId(userId);
     setError(null);
@@ -189,7 +189,7 @@ const AdminView: React.FC = () => {
         const updatedCache = {
             ...userAnalysesCache,
             [userId]: {
-                ...userAnalysesCache[userId],
+                ...(userAnalysesCache[userId] || {}),
                 [cacheKey]: result
             }
         };
@@ -198,14 +198,14 @@ const AdminView: React.FC = () => {
         
         setIndividualAnalysisStates(prev => ({
             ...prev,
-            [userId]: { ...prev[userId], [type]: 'idle' }
+            [userId]: { ...(prev[userId] || {}), [type]: 'idle' }
         }));
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "不明なエラー";
         setError(`「${type}」分析中にエラーが発生しました: ${errorMessage}`);
         setIndividualAnalysisStates(prev => ({
             ...prev,
-            [userId]: { ...prev[userId], [type]: 'error' }
+            [userId]: { ...(prev[userId] || {}), [type]: 'error' }
         }));
     }
   };
@@ -352,6 +352,13 @@ const AdminView: React.FC = () => {
         setUserToShare(userId);
         setIsShareModalOpen(true);
     };
+    
+  const isIndividualAnalysisLoadingForUser = (userId: string | null): boolean => {
+    if (!userId) return false;
+    const userState = individualAnalysisStates[userId];
+    if (!userState) return false;
+    return Object.values(userState).some(status => status === 'loading');
+  };
 
   const AnalysisToolkit: React.FC<{userId: string}> = ({userId}) => {
     const analysisState = individualAnalysisStates[userId] || {};
@@ -572,7 +579,7 @@ const AdminView: React.FC = () => {
                       <button onClick={analyzedUserId ? () => setAnalyzedUserId(null) : () => setError(null)} className="mt-4 px-3 py-1 bg-red-100 rounded-md">閉じる</button>
                   </div>
               ) : analyzedUserId ? (
-                  isAnyIndividualAnalysisLoading ? (
+                  isIndividualAnalysisLoadingForUser(analyzedUserId) ? (
                     <div className="flex flex-col items-center justify-center h-full text-slate-600 text-center">
                         <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-6"></div>
                         <p className="text-lg font-semibold">AIが分析中です...</p>
