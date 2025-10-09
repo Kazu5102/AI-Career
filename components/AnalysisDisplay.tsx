@@ -31,6 +31,7 @@ const createMarkup = (markdownText: string | undefined) => {
 const isValidString = (val: any): val is string => typeof val === 'string' && val.length > 0;
 const isValidNumber = (val: any): val is number => typeof val === 'number';
 const isValidStringArray = (arr: any): arr is string[] => Array.isArray(arr) && arr.every(item => typeof item === 'string');
+const isObject = (val: any): val is object => typeof val === 'object' && val !== null;
 
 // --- Reusable Card Components (with enhanced type safety) ---
 const KeyTakeawaysCard: React.FC<{ takeaways: string[] | undefined }> = ({ takeaways }) => {
@@ -69,7 +70,7 @@ const MetricCard: React.FC<{ title: string; value: string | number | undefined; 
 
 const ChartSection: React.FC<{ title: string; data: ChartDataPoint[] | undefined; icon: React.ReactNode }> = ({ title, data, icon }) => {
     const chartData = (Array.isArray(data) ? data : [])
-        .filter(d => d && isValidString(d.label) && isValidNumber(d.value));
+        .filter(d => isObject(d) && isValidString(d.label) && isValidNumber(d.value));
         
     return (
         <div className="bg-white p-6 rounded-xl shadow-md">
@@ -101,7 +102,7 @@ const InfoListCard: React.FC<{ title: string; items: string[] | undefined; icon:
 
 const ConsultationList: React.FC<{consultations: ConsultationEntry[] | undefined}> = ({consultations}) => {
     const safeConsultations = (Array.isArray(consultations) ? consultations : [])
-        .filter(c => c && isValidString(c.dateTime) && isValidNumber(c.estimatedDurationMinutes));
+        .filter(c => isObject(c) && isValidString(c.dateTime) && isValidNumber(c.estimatedDurationMinutes));
         
     return (
     <div className="bg-white p-6 rounded-xl shadow-md"><div className="flex items-center gap-3 mb-4"><div className="text-slate-500"><CalendarIcon /></div><h3 className="text-lg font-bold text-slate-800">相談期間</h3></div><ul className="space-y-2 max-h-48 overflow-y-auto pr-2">{safeConsultations.map((c, index) => <li key={index} className="flex justify-between items-center text-sm p-2 bg-slate-50 rounded-md"><div className="flex items-center gap-2"><span className="font-semibold text-slate-800">{c.dateTime}</span></div><span className="text-slate-600 font-medium">約{c.estimatedDurationMinutes}分</span></li>)}{safeConsultations.length === 0 && <p className="text-sm text-slate-500">相談履歴の詳細データがありません。</p>}</ul></div>
@@ -127,11 +128,11 @@ const SkillMatchingSection: React.FC<{ data: SkillMatchingResult | undefined }> 
     if (!data) return <div className="text-center text-slate-500 p-4">適性診断はまだ実行されていません。</div>;
 
     const recommendedRoles = (Array.isArray(data.recommendedRoles) ? data.recommendedRoles : [])
-        .filter((r): r is RecommendedRole => r && isValidString(r.role) && isValidString(r.reason) && isValidNumber(r.matchScore));
+        .filter((r): r is RecommendedRole => isObject(r) && isValidString(r.role) && isValidString(r.reason) && isValidNumber(r.matchScore));
     const skillsToDevelop = (Array.isArray(data.skillsToDevelop) ? data.skillsToDevelop : [])
-        .filter((s): s is SkillToDevelop => s && isValidString(s.skill) && isValidString(s.reason));
+        .filter((s): s is SkillToDevelop => isObject(s) && isValidString(s.skill) && isValidString(s.reason));
     const learningResources = (Array.isArray(data.learningResources) ? data.learningResources : [])
-        .filter((l): l is LearningResource => l && isValidString(l.title) && isValidString(l.type) && isValidString(l.provider));
+        .filter((l): l is LearningResource => isObject(l) && isValidString(l.title) && isValidString(l.type) && isValidString(l.provider));
 
 
     return <div className="space-y-6">
@@ -170,7 +171,7 @@ const HiddenPotentialSection: React.FC<{ data: HiddenPotentialData | undefined }
     if (!data) return <div className="text-center text-slate-500 p-4">隠れた可能性の分析はまだ実行されていません。</div>;
     
     const hiddenSkills = (Array.isArray(data.hiddenSkills) ? data.hiddenSkills : [])
-        .filter((s): s is SkillToDevelop => s && isValidString(s.skill) && isValidString(s.reason));
+        .filter((s): s is SkillToDevelop => isObject(s) && isValidString(s.skill) && isValidString(s.reason));
 
 
     return <div className="bg-yellow-50 border-2 border-dashed border-yellow-300 p-6 rounded-xl shadow-md">

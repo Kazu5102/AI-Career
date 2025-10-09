@@ -1,4 +1,3 @@
-
 // App.tsx - v2.0 - Forcing redeployment to clear stubborn cache.
 import React, { useState, useEffect } from 'react';
 import UserView from './views/UserView';
@@ -7,6 +6,8 @@ import PasswordModal from './components/PasswordModal';
 import { checkPassword } from './services/authService';
 import { checkServerStatus } from './services/index';
 import UserSelectionView from './views/UserSelectionView';
+import * as devLogService from './services/devLogService';
+
 
 type AppMode = 'user' | 'admin';
 type ServerStatus = 'checking' | 'ok' | 'error';
@@ -16,6 +17,23 @@ const App: React.FC = () => {
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [serverStatus, setServerStatus] = useState<ServerStatus>('checking');
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+    // This useEffect runs once when the component mounts after file updates.
+    // It logs the interaction that LED to this code change, creating an "automated" log.
+    useEffect(() => {
+        const userPrompt = "開発ログは管理者画面の中に入れて、管理したほうが良いと思いますがどうでしょうか？";
+        const aiSummary = "ユーザーの提案に基づき、「開発ログ」機能をグローバルヘッダーから管理者ダッシュボード内に移動しました。これにより、開発者向け機能が管理者エリアに集約され、UIがより整理されました。";
+        
+        // Ensure we don't log the same thing multiple times on hot reloads
+        const logs = devLogService.getLogs();
+        const lastEntry = logs.entries[logs.entries.length - 1];
+        if (!lastEntry || lastEntry.userPrompt !== userPrompt) {
+             devLogService.addLogEntry({
+                userPrompt,
+                aiSummary
+             });
+        }
+    }, []);
 
     useEffect(() => {
         const verifyServer = async () => {
@@ -85,14 +103,16 @@ const App: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen font-sans bg-slate-100">
-            <header className="bg-slate-800 text-white p-2 text-center shadow-md z-10 sticky top-0">
-                <span className="mr-4 font-bold">表示モード: {mode === 'user' ? 'ユーザー画面 (AIキャリア相談)' : '管理者画面'}</span>
-                <button
-                    onClick={handleSwitchMode}
-                    className="bg-sky-600 hover:bg-sky-700 px-3 py-1 rounded-md text-sm transition-colors"
-                >
-                    {mode === 'user' ? '管理者画面へ' : 'ユーザー画面へ'}
-                </button>
+            <header className="relative bg-slate-800 text-white p-2 text-center shadow-md z-10 sticky top-0">
+                <div className="flex justify-center items-center">
+                    <span className="mr-4 font-bold">表示モード: {mode === 'user' ? 'ユーザー画面 (AIキャリア相談)' : '管理者画面'}</span>
+                    <button
+                        onClick={handleSwitchMode}
+                        className="bg-sky-600 hover:bg-sky-700 px-3 py-1 rounded-md text-sm transition-colors"
+                    >
+                        {mode === 'user' ? '管理者画面へ' : 'ユーザー画面へ'}
+                    </button>
+                </div>
                 <p className="text-xs text-slate-400 mt-1">（これはデモ用の表示切り替え機能です）</p>
             </header>
             
