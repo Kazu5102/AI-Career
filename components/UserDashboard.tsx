@@ -1,14 +1,14 @@
 
 
 import React, { useState } from 'react';
-import { StoredConversation, SkillMatchingResult, STORAGE_VERSION, StoredData } from '../types';
+import { StoredConversation, SkillMatchingResult } from '../types';
 import ConversationDetailModal from './ConversationDetailModal';
 import SkillMatchingModal from './SkillMatchingModal';
+import ShareReportModal from './ShareReportModal'; // Import ShareReportModal
 import { performSkillMatching } from '../services/index';
 import TargetIcon from './icons/TargetIcon';
 import PlayIcon from './icons/PlayIcon';
-import ExportIcon from './icons/ExportIcon';
-import ExportSuccessModal from './ExportSuccessModal';
+import ShareIcon from './icons/ShareIcon'; // Import ShareIcon
 
 
 interface UserDashboardProps {
@@ -26,7 +26,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
   const [skillMatchingResult, setSkillMatchingResult] = useState<SkillMatchingResult | null>(null);
   const [isMatching, setIsMatching] = useState(false);
   const [matchingError, setMatchingError] = useState<string | null>(null);
-  const [isExportSuccessModalOpen, setIsExportSuccessModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false); // State for the new modal
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ja-JP', {
@@ -61,28 +61,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
     } finally {
         setIsMatching(false);
     }
-  };
-
-  const handleExportUserData = () => {
-      if (conversations.length === 0) {
-          alert("エクスポートするデータがありません。");
-          return;
-      }
-      const dataToStore: StoredData = {
-          version: STORAGE_VERSION,
-          data: conversations,
-      };
-      const blob = new Blob([JSON.stringify(dataToStore, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const date = new Date().toISOString().split('T')[0];
-      a.download = `consulting_data_${userId}_${date}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setIsExportSuccessModalOpen(true);
   };
 
   return (
@@ -122,11 +100,11 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
         <main className="pt-4">
           <div className="flex justify-end mb-2">
             <button
-              onClick={handleExportUserData}
+              onClick={() => setIsShareModalOpen(true)} // Open the new modal
               disabled={conversations.length === 0}
               className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-slate-600 text-white font-semibold rounded-lg shadow-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-opacity-75 transition-all duration-200 disabled:bg-slate-400 disabled:cursor-not-allowed"
             >
-                <ExportIcon />
+                <ShareIcon />
                 管理者へデータ提出
             </button>
           </div>
@@ -185,11 +163,16 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
         isLoading={isMatching}
         error={matchingError}
       />
-
-      <ExportSuccessModal 
-        isOpen={isExportSuccessModalOpen}
-        onClose={() => setIsExportSuccessModalOpen(false)}
-      />
+      
+      {isShareModalOpen && (
+        <ShareReportModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            userId={userId}
+            conversations={conversations}
+            analysisCache={null} // UserDashboard does not have analysis cache
+        />
+      )}
     </>
   );
 };

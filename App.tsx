@@ -21,8 +21,8 @@ const App: React.FC = () => {
     // This useEffect runs once when the component mounts after file updates.
     // It logs the interaction that LED to this code change, creating an "automated" log.
     useEffect(() => {
-        const userPrompt = "開発ログは管理者画面の中に入れて、管理したほうが良いと思いますがどうでしょうか？";
-        const aiSummary = "ユーザーの提案に基づき、「開発ログ」機能をグローバルヘッダーから管理者ダッシュボード内に移動しました。これにより、開発者向け機能が管理者エリアに集約され、UIがより整理されました。";
+        const userPrompt = "現在の会話のログを持たせたいのですが、何かいい案ありますか？";
+        const aiSummary = "ユーザーからの「開発セッション自体のログを見たい」という要望に基づき、開発ログを自動記録し、管理者画面からモーダルで閲覧できる機能を実装しました。ログのエクスポート・クリア機能も搭載しています。";
         
         // Ensure we don't log the same thing multiple times on hot reloads
         const logs = devLogService.getLogs();
