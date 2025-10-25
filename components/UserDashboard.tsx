@@ -1,6 +1,8 @@
 
+
 import React, { useState } from 'react';
-import { StoredConversation, SkillMatchingResult, STORAGE_VERSION, StoredData, UserAnalysisCache, AnalysisStatus, IndividualAnalysisState } from '../types';
+// FIX: Removed non-existent 'IndividualAnalysisState' and added 'AnalysisStateItem' for the refactored state.
+import { StoredConversation, SkillMatchingResult, STORAGE_VERSION, StoredData, UserAnalysisCache, AnalysisStatus, AnalysisStateItem } from '../types';
 import ConversationDetailModal from './ConversationDetailModal';
 import SkillMatchingModal from './SkillMatchingModal';
 import { performSkillMatching } from '../services/index';
@@ -21,9 +23,12 @@ interface UserDashboardProps {
 const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat, onResume, userId, nickname, onSwitchUser }) => {
   const [selectedConversation, setSelectedConversation] = useState<StoredConversation | null>(null);
   const [isMatchingModalOpen, setIsMatchingModalOpen] = useState(false);
-  const [skillMatchingResult, setSkillMatchingResult] = useState<SkillMatchingResult | null>(null);
-  const [skillMatchingStatus, setSkillMatchingStatus] = useState<AnalysisStatus>('idle');
-  const [skillMatchingError, setSkillMatchingError] = useState<string | null>(null);
+  // FIX: Refactored state to use a single object that matches the modal's expected props.
+  const [skillMatchingState, setSkillMatchingState] = useState<AnalysisStateItem<SkillMatchingResult>>({
+    status: 'idle',
+    data: null,
+    error: null,
+  });
   const [isExportSuccessModalOpen, setIsExportSuccessModalOpen] = useState(false);
 
   const formatDate = (dateString: string) => {
@@ -48,19 +53,16 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
     }
     
     setIsMatchingModalOpen(true);
-    setSkillMatchingStatus('loading');
-    setSkillMatchingResult(null);
-    setSkillMatchingError(null);
+    // FIX: Updated state management to use the new single state object.
+    setSkillMatchingState({ status: 'loading', data: null, error: null });
 
     try {
       const result = await performSkillMatching(conversations);
-      setSkillMatchingResult(result);
-      setSkillMatchingStatus('success');
+      setSkillMatchingState({ status: 'success', data: result, error: null });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "不明なエラーが発生しました。";
       console.error("Skill matching analysis failed:", errorMessage);
-      setSkillMatchingError(errorMessage);
-      setSkillMatchingStatus('error');
+      setSkillMatchingState({ status: 'error', data: null, error: errorMessage });
     }
   };
 
@@ -167,12 +169,16 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
         />
       )}
 
+      {/* FIX: Replaced individual props with a single `analysisState` prop to match the component's definition. */}
       <SkillMatchingModal
         isOpen={isMatchingModalOpen}
-        onClose={() => setIsMatchingModalOpen(false)}
-        result={skillMatchingResult}
-        isLoading={skillMatchingStatus === 'loading'}
-        error={skillMatchingError}
+        onClose={() => {
+            setIsMatchingModalOpen(false);
+            if (skillMatchingState.status === 'loading') {
+                setSkillMatchingState({ status: 'idle', data: null, error: null });
+            }
+        }}
+        analysisState={skillMatchingState}
       />
 
       <ExportSuccessModal 

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { marked } from 'marked';
-import { AnalysisData, UserAnalysisCache, ChartDataPoint, ConsultationEntry, TrajectoryAnalysisData, SkillToDevelop, HiddenPotentialData, AnalysisResult } from '../types';
+import { AnalysisData, ChartDataPoint, ConsultationEntry, TrajectoryAnalysisData, SkillToDevelop, HiddenPotentialData, AnalysisStateItem } from '../types';
 import DoughnutChart from './charts/DoughnutChart';
 import BarChartIcon from './icons/BarChartIcon';
 import PieChartIcon from './icons/PieChartIcon';
@@ -16,12 +16,14 @@ import TrajectoryIcon from './icons/TrajectoryIcon';
 
 
 interface AnalysisDisplayProps {
-    cache: (UserAnalysisCache & { comprehensive?: AnalysisData }) | null | undefined;
+    comprehensiveState?: AnalysisStateItem<AnalysisData>;
+    trajectoryState?: AnalysisStateItem<TrajectoryAnalysisData>;
+    hiddenPotentialState?: AnalysisStateItem<HiddenPotentialData>;
 }
 
 const chartColors = [ '#0ea5e9', '#34d399', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1' ];
 
-const createMarkup = (markdownText: string | undefined) => {
+const createMarkup = (markdownText: string | undefined | null) => {
     if (!markdownText) return { __html: '' };
     return { __html: marked.parse(markdownText, { breaks: true, gfm: true }) as string };
 };
@@ -33,7 +35,7 @@ const isValidStringArray = (arr: any): arr is string[] => Array.isArray(arr) && 
 const isObject = (val: any): val is object => typeof val === 'object' && val !== null;
 
 // --- Reusable Card Components (with enhanced type safety) ---
-const KeyTakeawaysCard: React.FC<{ takeaways: string[] | undefined }> = ({ takeaways }) => {
+const KeyTakeawaysCard: React.FC<{ takeaways: string[] | undefined | null }> = ({ takeaways }) => {
     const safeTakeaways = isValidStringArray(takeaways) ? takeaways : [];
     if (safeTakeaways.length === 0) return null;
     return (
@@ -65,7 +67,7 @@ const MetricCard: React.FC<{ title: string; value: string | number | undefined; 
     </div>
 );
 
-const ChartSection: React.FC<{ title: string; data: ChartDataPoint[] | undefined; icon: React.ReactNode }> = ({ title, data, icon }) => {
+const ChartSection: React.FC<{ title: string; data: ChartDataPoint[] | undefined | null; icon: React.ReactNode }> = ({ title, data, icon }) => {
     const chartData = (Array.isArray(data) ? data : [])
         .filter(d => isObject(d) && isValidString(d.label) && isValidNumber(d.value));
         
@@ -84,7 +86,7 @@ const ChartSection: React.FC<{ title: string; data: ChartDataPoint[] | undefined
     );
 };
 
-const InfoListCard: React.FC<{ title: string; items: string[] | undefined; icon: React.ReactNode; iconBgColor: string, iconColor: string }> = ({ title, items, icon, iconBgColor, iconColor }) => {
+const InfoListCard: React.FC<{ title: string; items: string[] | undefined | null; icon: React.ReactNode; iconBgColor: string, iconColor: string }> = ({ title, items, icon, iconBgColor, iconColor }) => {
     const safeItems = isValidStringArray(items) ? items : [];
     return (
      <div className="bg-white p-4 rounded-xl shadow-md">
@@ -97,7 +99,7 @@ const InfoListCard: React.FC<{ title: string; items: string[] | undefined; icon:
     );
 };
 
-const ConsultationList: React.FC<{consultations: ConsultationEntry[] | undefined}> = ({consultations}) => {
+const ConsultationList: React.FC<{consultations: ConsultationEntry[] | undefined | null}> = ({consultations}) => {
     const safeConsultations = (Array.isArray(consultations) ? consultations : [])
         .filter(c => isObject(c) && isValidString(c.dateTime) && isValidNumber(c.estimatedDurationMinutes));
         
@@ -109,22 +111,31 @@ const ConsultationList: React.FC<{consultations: ConsultationEntry[] | undefined
 const AnalysisErrorDisplay: React.FC<{ title: string; message: string }> = ({ title, message }) => (
     <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200">
         <h3 className="font-bold text-md flex items-center gap-2">
-             <svg xmlns="http://www.w.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
             {title} 分析エラー
         </h3>
         <p className="text-sm mt-2">{message}</p>
     </div>
 );
 
+const SectionLoading: React.FC<{ title: string }> = ({ title }) => (
+  <div className="p-4 bg-white rounded-xl shadow-md flex items-center gap-4 text-slate-600">
+    <div className="w-5 h-5 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+    <span className="font-semibold">{title}を分析中...</span>
+  </div>
+);
+
 
 // --- Section Components for Individual Analysis ---
-const TrajectorySection: React.FC<{ data: AnalysisResult<TrajectoryAnalysisData> | undefined }> = ({ data }) => {
-    if (!data) return null;
-    if ('error' in data && data.error) {
-        return <AnalysisErrorDisplay title="相談の軌跡" message={data.error} />;
+const TrajectorySection: React.FC<{ state: AnalysisStateItem<TrajectoryAnalysisData> }> = ({ state }) => {
+    if (state.status === 'idle') return null;
+    if (state.status === 'loading') return <SectionLoading title="相談の軌跡" />;
+    if (state.status === 'error' && state.error) {
+        return <AnalysisErrorDisplay title="相談の軌跡" message={state.error} />;
     }
-    // Type guard for successful data
-    if ('error' in data) return null;
+    
+    const data = state.data;
+    if (!data) return null;
     
     return <section className="space-y-4">
         <div className="flex items-center gap-3">
@@ -145,13 +156,15 @@ const TrajectorySection: React.FC<{ data: AnalysisResult<TrajectoryAnalysisData>
 };
 
 
-const HiddenPotentialSection: React.FC<{ data: AnalysisResult<HiddenPotentialData> | undefined }> = ({ data }) => {
-    if (!data) return null;
-    if ('error' in data && data.error) {
-        return <AnalysisErrorDisplay title="隠れた可能性" message={data.error} />;
+const HiddenPotentialSection: React.FC<{ state: AnalysisStateItem<HiddenPotentialData> }> = ({ state }) => {
+    if (state.status === 'idle') return null;
+    if (state.status === 'loading') return <SectionLoading title="隠れた可能性" />;
+    if (state.status === 'error' && state.error) {
+        return <AnalysisErrorDisplay title="隠れた可能性" message={state.error} />;
     }
-    // Type guard for successful data
-    if ('error' in data) return null;
+
+    const data = state.data;
+    if (!data) return null;
     
     const hiddenSkills = (Array.isArray(data?.hiddenSkills) ? data.hiddenSkills : [])
         .filter((s): s is SkillToDevelop => isObject(s) && isValidString(s.skill) && isValidString(s.reason));
@@ -169,40 +182,73 @@ const HiddenPotentialSection: React.FC<{ data: AnalysisResult<HiddenPotentialDat
 };
 
 // --- Main Component ---
-const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ cache }) => {
-    if (!cache) return null;
+const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ comprehensiveState, trajectoryState, hiddenPotentialState }) => {
     
     // Comprehensive Analysis View
-    if (cache.comprehensive) {
-        const data = cache.comprehensive;
-        const keyMetrics = data?.keyMetrics;
-        
-        return (
-            <div className="space-y-6">
-                 <KeyTakeawaysCard takeaways={data?.keyTakeaways} />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <MetricCard title="総相談件数" value={keyMetrics?.totalConsultations} icon={<BarChartIcon />} />
-                    <MetricCard title="主な業界" value={(isValidStringArray(keyMetrics?.commonIndustries) && keyMetrics.commonIndustries.length > 0) ? keyMetrics.commonIndustries[0] : 'N/A'} subValue={keyMetrics?.commonIndustries} icon={<TrendingUpIcon />} />
+    if (comprehensiveState) {
+        const { status, data, error } = comprehensiveState;
+
+        if (status === 'loading') {
+             return (
+              <div className="flex flex-col items-center justify-center h-full text-slate-600 text-center">
+                  <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="font-semibold">総合分析を実行中...</p>
+              </div>
+            );
+        }
+        if (status === 'error' && error) {
+            return (
+              <div className="flex flex-col items-center justify-center h-full text-center text-red-500 bg-red-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg">分析エラー</h3>
+                  <p className="mt-1">{error}</p>
+              </div>
+            );
+        }
+        if (status === 'success' && data) {
+            const keyMetrics = data.keyMetrics;
+            return (
+                <div className="space-y-6">
+                     <KeyTakeawaysCard takeaways={data.keyTakeaways} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <MetricCard title="総相談件数" value={keyMetrics?.totalConsultations} icon={<BarChartIcon />} />
+                        <MetricCard title="主な業界" value={(isValidStringArray(keyMetrics?.commonIndustries) && keyMetrics.commonIndustries.length > 0) ? keyMetrics.commonIndustries[0] : 'N/A'} subValue={keyMetrics?.commonIndustries} icon={<TrendingUpIcon />} />
+                    </div>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <ChartSection title="共通の悩み・課題" data={data.commonChallenges} icon={<PieChartIcon />} />
+                        <ChartSection title="キャリアにおける希望" data={data.careerAspirations} icon={<PieChartIcon />} />
+                    </div>
+                    <InfoListCard title="相談者によく見られる強み" items={data.commonStrengths} icon={<CheckIcon />} iconBgColor="bg-emerald-100" iconColor="text-emerald-600" />
+                    <div className="bg-white p-6 rounded-xl shadow-md"><h3 className="text-lg font-bold text-slate-800 mb-4">総合的なインサイトと提言</h3><article className="prose prose-slate max-w-none" dangerouslySetInnerHTML={createMarkup(data.overallInsights)} /></div>
                 </div>
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    <ChartSection title="共通の悩み・課題" data={data?.commonChallenges} icon={<PieChartIcon />} />
-                    <ChartSection title="キャリアにおける希望" data={data?.careerAspirations} icon={<PieChartIcon />} />
-                </div>
-                <InfoListCard title="相談者によく見られる強み" items={data?.commonStrengths} icon={<CheckIcon />} iconBgColor="bg-emerald-100" iconColor="text-emerald-600" />
-                <div className="bg-white p-6 rounded-xl shadow-md"><h3 className="text-lg font-bold text-slate-800 mb-4">総合的なインサイトと提言</h3><article className="prose prose-slate max-w-none" dangerouslySetInnerHTML={createMarkup(data?.overallInsights)} /></div>
-            </div>
-        );
+            );
+        }
+
+        // Fallback for idle or other states
+        return null;
     }
 
     // Individual Analysis View
-    // BUG FIX: Removed generic error handling block. Error handling is now done
-    // inside each specific analysis section component for better context.
-    return (
-        <div className="space-y-8">
-            <TrajectorySection data={cache?.trajectory} />
-            <HiddenPotentialSection data={cache?.hiddenPotential} />
-        </div>
-    );
+    if (trajectoryState && hiddenPotentialState) {
+        const isInitial = trajectoryState.status === 'idle' && hiddenPotentialState.status === 'idle';
+
+        if(isInitial) {
+             return (
+                <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center">
+                    <h3 className="font-semibold">分析レポート</h3>
+                    <p className="text-sm mt-1">ボタンをクリックして、AI分析を開始してください。</p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="space-y-8">
+                <TrajectorySection state={trajectoryState} />
+                <HiddenPotentialSection state={hiddenPotentialState} />
+            </div>
+        );
+    }
+    
+    return null;
 };
 
 export default AnalysisDisplay;

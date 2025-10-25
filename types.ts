@@ -120,28 +120,34 @@ export interface HiddenPotentialData {
     hiddenSkills: SkillToDevelop[];
 }
 
-// --- NEW: A robust type to handle both success and error states for analysis results ---
-export type AnalysisResult<T> = T | { error: string };
+// --- REFACTORED STATE MANAGEMENT ---
+export type AnalysisStatus = 'idle' | 'loading' | 'error' | 'success';
+export type AnalysisType = 'trajectory' | 'skillMatching' | 'hiddenPotential';
 
-// 3. Cache Structure for all user analyses
-export interface UserAnalysisCache {
-    trajectory?: AnalysisResult<TrajectoryAnalysisData>;
-    skillMatching?: AnalysisResult<SkillMatchingResult>;
-    hiddenPotential?: AnalysisResult<HiddenPotentialData>;
+/**
+ * A robust, unified type to handle the status, data, and error for any analysis.
+ * This is the new standard for managing asynchronous analysis state.
+ * @template T The type of the successful data payload.
+ */
+export interface AnalysisStateItem<T> {
+  status: AnalysisStatus;
+  data: T | null;
+  error: string | null;
 }
 
-// --- NEW TYPES FOR INDIVIDUAL ANALYSIS STATE MANAGEMENT ---
-export type AnalysisType = 'trajectory' | 'skillMatching' | 'hiddenPotential';
-// FIX: Added 'success' state to allow for correct state management after analysis.
-export type AnalysisStatus = 'idle' | 'loading' | 'error' | 'success';
-
-export type IndividualAnalysisState = {
-    [key in AnalysisType]?: AnalysisStatus;
+/**
+ * The complete state for all individual analyses performed in the AdminView.
+ */
+export type AnalysesState = {
+  trajectory: AnalysisStateItem<TrajectoryAnalysisData>;
+  skillMatching: AnalysisStateItem<SkillMatchingResult>;
+  hiddenPotential: AnalysisStateItem<HiddenPotentialData>;
 };
 
-// --- NEW TYPE FOR COMPREHENSIVE ANALYSIS ---
-export interface ComprehensiveAnalysisState {
-    status: AnalysisStatus;
-    data: AnalysisData | null;
-    error: string | null;
+// --- LEGACY TYPE for ShareReportModal compatibility ---
+// This will be phased out later but is kept for now to avoid refactoring the report generator.
+export interface UserAnalysisCache {
+    trajectory?: (TrajectoryAnalysisData | { error: string });
+    skillMatching?: (SkillMatchingResult | { error: string });
+    hiddenPotential?: (HiddenPotentialData | { error: string });
 }

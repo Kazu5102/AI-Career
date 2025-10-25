@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { marked } from 'marked';
-import { SkillMatchingResult } from '../types';
+import { SkillMatchingResult, AnalysisStateItem } from '../types';
 import BriefcaseIcon from './icons/BriefcaseIcon';
 import LightbulbIcon from './icons/LightbulbIcon';
 import LinkIcon from './icons/LinkIcon';
@@ -10,24 +10,24 @@ import TargetIcon from './icons/TargetIcon';
 interface SkillMatchingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  result: SkillMatchingResult | null;
-  isLoading: boolean;
-  error: string | null;
+  analysisState: AnalysisStateItem<SkillMatchingResult>;
 }
 
 
-const createMarkup = (markdownText: string | undefined) => {
+const createMarkup = (markdownText: string | undefined | null) => {
     if (!markdownText) return { __html: '' };
     const rawMarkup = marked.parse(markdownText, { breaks: true, gfm: true }) as string;
     return { __html: rawMarkup };
 };
 
-const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose, result, isLoading, error }) => {
+const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose, analysisState }) => {
   
   if (!isOpen) return null;
   
+  const { status, data: result, error } = analysisState;
+
   const renderContent = () => {
-    if (isLoading) {
+    if (status === 'loading') {
       return (
         <div className="flex flex-col items-center justify-center h-full text-slate-600 p-8 text-center">
           <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-6"></div>
@@ -37,7 +37,7 @@ const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose
       );
     }
 
-    if (error) {
+    if (status === 'error' && error) {
        return (
         <div className="flex flex-col items-center justify-center h-full text-center text-red-600 bg-red-50 p-8 rounded-lg">
             <h3 className="font-bold text-lg">エラーが発生しました</h3>
@@ -46,7 +46,7 @@ const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose
       );
     }
     
-    if (result) {
+    if (status === 'success' && result) {
         return (
           <div className="space-y-8">
             {/* Analysis Summary */}
