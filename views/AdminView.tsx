@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { StoredConversation, StoredData, UserInfo, STORAGE_VERSION, UserAnalysisCache, AnalysisType, IndividualAnalysisState } from '../types';
+import { StoredConversation, StoredData, UserInfo, STORAGE_VERSION, UserAnalysisCache, AnalysisType, IndividualAnalysisState, AnalysisResult } from '../types';
 import * as userService from '../services/userService';
 import { getStoredPassword, setPassword } from '../services/authService';
 import * as devLogService from '../services/devLogService';
@@ -168,10 +169,7 @@ const AdminView: React.FC = () => {
           return;
       }
       setAnalysisState(prev => ({ ...prev, [type]: 'loading' }));
-      // BUG FIX: Do not clear the cache immediately. This prevents the UI from crashing
-      // when trying to access properties of a now-undefined object during re-render.
-      // The old data will be kept until the new data arrives.
-
+      
       try {
           let result;
           if (type === 'trajectory') result = await analyzeTrajectory(conversations, userId);
@@ -187,8 +185,6 @@ const AdminView: React.FC = () => {
           const errorMessage = err instanceof Error ? err.message : "不明なエラーが発生しました。";
           console.error(`Analysis failed for ${type}:`, errorMessage);
           setAnalysisState(prev => ({ ...prev, [type]: 'error' }));
-          // BUG FIX: Store the error message in the cache in a structured way,
-          // which is now type-safe thanks to the AnalysisResult<T> type.
           setAnalysisCache(prev => ({ ...prev, [type]: { error: errorMessage } }));
       }
     };
@@ -234,7 +230,6 @@ const AdminView: React.FC = () => {
         <button onClick={() => setActiveTab(tabId)} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === tabId ? 'bg-sky-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>{children}</button>
     );
     
-    // Safely extract result and error for the SkillMatchingModal
     const skillMatchingCache = analysisCache.skillMatching;
     const skillMatchingResult = (skillMatchingCache && !('error' in skillMatchingCache)) ? skillMatchingCache : null;
     const skillMatchingError = (skillMatchingCache && 'error' in skillMatchingCache) ? skillMatchingCache.error : null;
@@ -295,7 +290,13 @@ const AdminView: React.FC = () => {
                                 </div>
                                 
                                 <div className="p-4 flex-1 overflow-y-auto">
-                                    {analysisCache.trajectory || analysisCache.hiddenPotential ? (
+                                    {isAnyAnalysisLoading ? (
+                                        <div className="flex flex-col items-center justify-center h-full text-slate-600 text-center">
+                                            <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                            <p className="font-semibold">AIが分析中です...</p>
+                                            <p className="text-sm text-slate-500 mt-1">しばらくお待ちください</p>
+                                        </div>
+                                    ) : analysisCache.trajectory || analysisCache.hiddenPotential ? (
                                         <AnalysisDisplay cache={analysisCache} />
                                     ) : (
                                         <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center">
@@ -339,7 +340,6 @@ const AdminView: React.FC = () => {
                 isOpen={isMatchingModalOpen} 
                 onClose={() => {
                     setIsMatchingModalOpen(false);
-                    // Set status to idle only if it was loading, otherwise preserve error/success state
                     if (analysisState.skillMatching === 'loading') {
                        setAnalysisState(prev => ({...prev, skillMatching: 'idle'}));
                     }
