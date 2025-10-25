@@ -52,7 +52,7 @@ const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose
             {/* Analysis Summary */}
             <section>
               <h3 className="text-xl font-bold text-slate-800 border-b-2 border-slate-200 pb-2 mb-4">あなたのキャリアプロファイル</h3>
-              <article className="prose prose-slate max-w-none prose-sm" dangerouslySetInnerHTML={createMarkup(result.analysisSummary)} />
+              <article className="prose prose-slate max-w-none prose-sm" dangerouslySetInnerHTML={createMarkup(result?.analysisSummary)} />
             </section>
 
             {/* Recommended Roles */}
@@ -62,7 +62,7 @@ const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose
                 <h3 className="text-xl font-bold text-slate-800">おすすめの職種</h3>
               </div>
               <div className="space-y-4">
-                {result.recommendedRoles.map(role => (
+                {result.recommendedRoles?.map(role => (
                     <div key={role.role} className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
                         <div className="flex justify-between items-start gap-4">
                             <h4 className="font-bold text-md text-sky-800">{role.role}</h4>
@@ -87,7 +87,7 @@ const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose
                 <h3 className="text-xl font-bold text-slate-800">伸ばすと良いスキル</h3>
               </div>
               <div className="space-y-3">
-                {result.skillsToDevelop.map(skill => (
+                {result.skillsToDevelop?.map(skill => (
                   <div key={skill.skill} className="bg-slate-50 p-3 rounded-lg">
                     <h4 className="font-semibold text-emerald-800">{skill.skill}</h4>
                     <p className="text-sm text-slate-600">{skill.reason}</p>
@@ -106,7 +106,7 @@ const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose
                 リンク切れを防ぎ、常に最新の情報にアクセスできるよう、直接のリンクの代わりに検索リンクを提供しています。タイトルと提供元をご確認の上、公式サイトからアクセスしてください。
               </p>
               <div className="space-y-2">
-                {result.learningResources.map(resource => {
+                {result.learningResources?.map(resource => {
                   const searchQuery = encodeURIComponent(`${resource.provider} ${resource.title}`);
                   const searchUrl = `https://www.google.com/search?q=${searchQuery}`;
                   return (

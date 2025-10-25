@@ -109,7 +109,7 @@ const ConsultationList: React.FC<{consultations: ConsultationEntry[] | undefined
 const AnalysisErrorDisplay: React.FC<{ title: string; message: string }> = ({ title, message }) => (
     <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200">
         <h3 className="font-bold text-md flex items-center gap-2">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+             <svg xmlns="http://www.w.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
             {title} 分析エラー
         </h3>
         <p className="text-sm mt-2">{message}</p>
@@ -131,16 +131,16 @@ const TrajectorySection: React.FC<{ data: AnalysisResult<TrajectoryAnalysisData>
             <div className="bg-sky-100 text-sky-600 p-2 rounded-lg"><TrajectoryIcon /></div>
             <h2 className="text-xl font-bold text-slate-800">相談の軌跡</h2>
         </div>
-        <KeyTakeawaysCard takeaways={data.keyTakeaways} />
+        <KeyTakeawaysCard takeaways={data?.keyTakeaways} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <MetricCard title="相談件数" value={data.totalConsultations} icon={<BarChartIcon />} />
-            <ConsultationList consultations={data.consultations} />
+            <MetricCard title="相談件数" value={data?.totalConsultations} icon={<BarChartIcon />} />
+            <ConsultationList consultations={data?.consultations} />
         </div>
-        <InfoListCard title="キーテーマ" items={data.keyThemes} icon={<ChatIcon />} iconBgColor="bg-sky-100" iconColor="text-sky-600" />
-        <InfoListCard title="検出された強み" items={data.detectedStrengths} icon={<TrendingUpIcon />} iconBgColor="bg-emerald-100" iconColor="text-emerald-600" />
-        <InfoListCard title="今後の成長領域" items={data.areasForDevelopment} icon={<EditIcon />} iconBgColor="bg-amber-100" iconColor="text-amber-600" />
-        <InfoListCard title="提案される次のステップ" items={data.suggestedNextSteps} icon={<CheckIcon />} iconBgColor="bg-violet-100" iconColor="text-violet-600" />
-        <div className="bg-white p-4 rounded-xl shadow-md"><h3 className="text-md font-bold text-slate-800 mb-2">総合サマリー</h3><article className="prose prose-sm prose-slate max-w-none" dangerouslySetInnerHTML={createMarkup(data.overallSummary)} /></div>
+        <InfoListCard title="キーテーマ" items={data?.keyThemes} icon={<ChatIcon />} iconBgColor="bg-sky-100" iconColor="text-sky-600" />
+        <InfoListCard title="検出された強み" items={data?.detectedStrengths} icon={<TrendingUpIcon />} iconBgColor="bg-emerald-100" iconColor="text-emerald-600" />
+        <InfoListCard title="今後の成長領域" items={data?.areasForDevelopment} icon={<EditIcon />} iconBgColor="bg-amber-100" iconColor="text-amber-600" />
+        <InfoListCard title="提案される次のステップ" items={data?.suggestedNextSteps} icon={<CheckIcon />} iconBgColor="bg-violet-100" iconColor="text-violet-600" />
+        <div className="bg-white p-4 rounded-xl shadow-md"><h3 className="text-md font-bold text-slate-800 mb-2">総合サマリー</h3><article className="prose prose-sm prose-slate max-w-none" dangerouslySetInnerHTML={createMarkup(data?.overallSummary)} /></div>
     </section>;
 };
 
@@ -153,7 +153,7 @@ const HiddenPotentialSection: React.FC<{ data: AnalysisResult<HiddenPotentialDat
     // Type guard for successful data
     if ('error' in data) return null;
     
-    const hiddenSkills = (Array.isArray(data.hiddenSkills) ? data.hiddenSkills : [])
+    const hiddenSkills = (Array.isArray(data?.hiddenSkills) ? data.hiddenSkills : [])
         .filter((s): s is SkillToDevelop => isObject(s) && isValidString(s.skill) && isValidString(s.reason));
 
     if (hiddenSkills.length === 0) return null;
@@ -199,8 +199,8 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ cache }) => {
     // inside each specific analysis section component for better context.
     return (
         <div className="space-y-8">
-            <TrajectorySection data={cache.trajectory} />
-            <HiddenPotentialSection data={cache.hiddenPotential} />
+            <TrajectorySection data={cache?.trajectory} />
+            <HiddenPotentialSection data={cache?.hiddenPotential} />
         </div>
     );
 };
