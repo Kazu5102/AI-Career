@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { marked } from 'marked';
-import { AnalysisData, UserAnalysisCache, ChartDataPoint, ConsultationEntry, SkillMatchingResult, TrajectoryAnalysisData, RecommendedRole, SkillToDevelop, LearningResource, HiddenPotentialData } from '../types';
+import { AnalysisData, UserAnalysisCache, ChartDataPoint, ConsultationEntry, TrajectoryAnalysisData, SkillToDevelop, HiddenPotentialData, AnalysisResult } from '../types';
 import DoughnutChart from './charts/DoughnutChart';
 import BarChartIcon from './icons/BarChartIcon';
 import PieChartIcon from './icons/PieChartIcon';
@@ -10,13 +10,9 @@ import ChatIcon from './icons/ChatIcon';
 import EditIcon from './icons/EditIcon';
 import CheckIcon from './icons/CheckIcon';
 import CalendarIcon from './icons/CalendarIcon';
-import BriefcaseIcon from './icons/BriefcaseIcon';
-import LightbulbIcon from './icons/LightbulbIcon';
-import LinkIcon from './icons/LinkIcon';
 import BrainIcon from './icons/BrainIcon';
 import SparklesIcon from './icons/SparklesIcon';
 import TrajectoryIcon from './icons/TrajectoryIcon';
-import TargetIcon from './icons/TargetIcon';
 
 
 interface AnalysisDisplayProps {
@@ -110,9 +106,26 @@ const ConsultationList: React.FC<{consultations: ConsultationEntry[] | undefined
     );
 };
 
+const AnalysisErrorDisplay: React.FC<{ title: string; message: string }> = ({ title, message }) => (
+    <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200">
+        <h3 className="font-bold text-md flex items-center gap-2">
+             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+            {title} 分析エラー
+        </h3>
+        <p className="text-sm mt-2">{message}</p>
+    </div>
+);
+
+
 // --- Section Components for Individual Analysis ---
-const TrajectorySection: React.FC<{ data: TrajectoryAnalysisData | undefined }> = ({ data }) => {
+const TrajectorySection: React.FC<{ data: AnalysisResult<TrajectoryAnalysisData> | undefined }> = ({ data }) => {
     if (!data) return null;
+    if ('error' in data && data.error) {
+        return <AnalysisErrorDisplay title="相談の軌跡" message={data.error} />;
+    }
+    // Type guard for successful data
+    if ('error' in data) return null;
+    
     return <section className="space-y-4">
         <div className="flex items-center gap-3">
             <div className="bg-sky-100 text-sky-600 p-2 rounded-lg"><TrajectoryIcon /></div>
@@ -132,8 +145,13 @@ const TrajectorySection: React.FC<{ data: TrajectoryAnalysisData | undefined }> 
 };
 
 
-const HiddenPotentialSection: React.FC<{ data: HiddenPotentialData | undefined }> = ({ data }) => {
+const HiddenPotentialSection: React.FC<{ data: AnalysisResult<HiddenPotentialData> | undefined }> = ({ data }) => {
     if (!data) return null;
+    if ('error' in data && data.error) {
+        return <AnalysisErrorDisplay title="隠れた可能性" message={data.error} />;
+    }
+    // Type guard for successful data
+    if ('error' in data) return null;
     
     const hiddenSkills = (Array.isArray(data.hiddenSkills) ? data.hiddenSkills : [])
         .filter((s): s is SkillToDevelop => isObject(s) && isValidString(s.skill) && isValidString(s.reason));
@@ -177,20 +195,8 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ cache }) => {
     }
 
     // Individual Analysis View
-    const analysisError = (cache.trajectory as any)?.error || (cache.hiddenPotential as any)?.error;
-    if(analysisError) {
-        return (
-             <div className="flex flex-col items-center justify-center h-full text-center text-red-500 bg-red-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-lg">分析エラー</h3>
-                <p className="mt-1">{analysisError}</p>
-            </div>
-        )
-    }
-
-    if (!cache.trajectory && !cache.hiddenPotential) {
-        return null; // Don't render anything if there's no individual data
-    }
-
+    // BUG FIX: Removed generic error handling block. Error handling is now done
+    // inside each specific analysis section component for better context.
     return (
         <div className="space-y-8">
             <TrajectorySection data={cache.trajectory} />

@@ -120,11 +120,14 @@ export interface HiddenPotentialData {
     hiddenSkills: SkillToDevelop[];
 }
 
+// --- NEW: A robust type to handle both success and error states for analysis results ---
+export type AnalysisResult<T> = T | { error: string };
+
 // 3. Cache Structure for all user analyses
 export interface UserAnalysisCache {
-    trajectory?: TrajectoryAnalysisData;
-    skillMatching?: SkillMatchingResult;
-    hiddenPotential?: HiddenPotentialData;
+    trajectory?: AnalysisResult<TrajectoryAnalysisData>;
+    skillMatching?: AnalysisResult<SkillMatchingResult>;
+    hiddenPotential?: AnalysisResult<HiddenPotentialData>;
 }
 
 // --- NEW TYPES FOR INDIVIDUAL ANALYSIS STATE MANAGEMENT ---

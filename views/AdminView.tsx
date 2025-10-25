@@ -168,7 +168,9 @@ const AdminView: React.FC = () => {
           return;
       }
       setAnalysisState(prev => ({ ...prev, [type]: 'loading' }));
-      setAnalysisCache(prev => ({ ...prev, [type]: undefined }));
+      // BUG FIX: Do not clear the cache immediately. This prevents the UI from crashing
+      // when trying to access properties of a now-undefined object during re-render.
+      // The old data will be kept until the new data arrives.
 
       try {
           let result;
@@ -185,7 +187,9 @@ const AdminView: React.FC = () => {
           const errorMessage = err instanceof Error ? err.message : "不明なエラーが発生しました。";
           console.error(`Analysis failed for ${type}:`, errorMessage);
           setAnalysisState(prev => ({ ...prev, [type]: 'error' }));
-          setAnalysisCache(prev => ({ ...prev, [type]: { error: errorMessage } as any }));
+          // BUG FIX: Store the error message in the cache in a structured way,
+          // which is now type-safe thanks to the AnalysisResult<T> type.
+          setAnalysisCache(prev => ({ ...prev, [type]: { error: errorMessage } }));
       }
     };
 
@@ -229,6 +233,12 @@ const AdminView: React.FC = () => {
     const TabButton: React.FC<{ tabId: AdminTab; children: React.ReactNode }> = ({ tabId, children }) => (
         <button onClick={() => setActiveTab(tabId)} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${activeTab === tabId ? 'bg-sky-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>{children}</button>
     );
+    
+    // Safely extract result and error for the SkillMatchingModal
+    const skillMatchingCache = analysisCache.skillMatching;
+    const skillMatchingResult = (skillMatchingCache && !('error' in skillMatchingCache)) ? skillMatchingCache : null;
+    const skillMatchingError = (skillMatchingCache && 'error' in skillMatchingCache) ? skillMatchingCache.error : null;
+
 
     return (
         <div className="w-full max-w-7xl mx-auto p-4 md:p-6 bg-white rounded-2xl shadow-2xl border border-slate-200 my-4 md:my-6 min-h-[80vh]">
@@ -271,22 +281,28 @@ const AdminView: React.FC = () => {
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                                         {(['trajectory', 'skillMatching', 'hiddenPotential'] as AnalysisType[]).map(type => (
-                                            <button key={type} onClick={() => handleRunAnalysis(type, selectedUserConversations, selectedUserId)} disabled={isAnyAnalysisLoading || selectedUserConversations.length === 0} className="flex items-center gap-2 p-2 text-sm font-semibold rounded-md transition-colors bg-white border hover:bg-slate-100 disabled:bg-slate-200 disabled:cursor-not-allowed">
+                                            <button key={type} onClick={() => handleRunAnalysis(type, selectedUserConversations, selectedUserId)} disabled={isAnyAnalysisLoading || selectedUserConversations.length === 0} className="relative group flex items-center justify-center gap-2 p-2 text-sm font-semibold rounded-md transition-colors bg-white border hover:bg-slate-100 disabled:bg-slate-200 disabled:cursor-not-allowed">
+                                                {analysisState[type] === 'loading' && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-md">
+                                                        <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+                                                    </div>
+                                                )}
                                                 {type === 'trajectory' ? <TrajectoryIcon /> : type === 'skillMatching' ? <TargetIcon /> : <BrainIcon />}
-                                                <span>{analysisState[type] === 'loading' ? '分析中...' : type === 'trajectory' ? '相談の軌跡' : type === 'skillMatching' ? '適性診断' : '隠れた可能性'}</span>
+                                                <span>{type === 'trajectory' ? '相談の軌跡' : type === 'skillMatching' ? '適性診断' : '隠れた可能性'}</span>
                                             </button>
                                         ))}
                                     </div>
                                 </div>
                                 
                                 <div className="p-4 flex-1 overflow-y-auto">
-                                    {isAnyAnalysisLoading && Object.values(analysisState).every(s => s !== 'success') && (
-                                        <div className="flex flex-col items-center justify-center h-full text-slate-600 text-center">
-                                            <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                                            <p className="font-semibold">AIが分析中です...</p>
+                                    {analysisCache.trajectory || analysisCache.hiddenPotential ? (
+                                        <AnalysisDisplay cache={analysisCache} />
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center">
+                                            <h3 className="font-semibold">分析レポート</h3>
+                                            <p className="text-sm mt-1">ボタンをクリックして、AI分析を開始してください。</p>
                                         </div>
                                     )}
-                                    <AnalysisDisplay cache={analysisCache} />
                                 </div>
 
                                 <div className="p-4 border-t border-slate-200 bg-slate-100 max-h-48 overflow-y-auto">
@@ -323,11 +339,14 @@ const AdminView: React.FC = () => {
                 isOpen={isMatchingModalOpen} 
                 onClose={() => {
                     setIsMatchingModalOpen(false);
-                    setAnalysisState(prev => ({...prev, skillMatching: 'idle'}));
+                    // Set status to idle only if it was loading, otherwise preserve error/success state
+                    if (analysisState.skillMatching === 'loading') {
+                       setAnalysisState(prev => ({...prev, skillMatching: 'idle'}));
+                    }
                 }}
                 isLoading={analysisState.skillMatching === 'loading'}
-                error={(analysisCache.skillMatching as any)?.error || null}
-                result={analysisCache.skillMatching || null}
+                error={skillMatchingError}
+                result={skillMatchingResult}
             />
         </div>
     );
