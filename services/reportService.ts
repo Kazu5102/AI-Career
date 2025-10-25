@@ -118,7 +118,7 @@ export const generateReport = async (data: ReportData, password: string): Promis
                 <h2 class="text-2xl font-bold border-b pb-2 mb-4">対話履歴 (\${data.conversations.length}件)</h2>
                 <div class="space-y-6 mt-4">
             \`;
-            data.conversations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).forEach(conv => {
+            data.conversations.forEach(conv => {
                 const date = new Date(conv.date).toLocaleString('ja-JP');
                 html += \`<div class="p-4 border rounded-lg bg-slate-50">
                     <h3 class="font-bold text-lg">相談日時: \${date}</h3>
@@ -136,34 +136,13 @@ export const generateReport = async (data: ReportData, password: string): Promis
 
         function markdownToHtml(md) {
             if (!md) return '';
-            let text = md.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            
-            const lines = text.split('\\n');
-            let html = '';
-            let inList = false;
-
-            for (const line of lines) {
-                const trimmedLine = line.trim();
-                if (trimmedLine.startsWith('## ')) {
-                    if (inList) { html += '</ul>'; inList = false; }
-                    html += \`<h3 class="text-xl font-bold mt-6 mb-3 border-b pb-2">\${trimmedLine.substring(3)}</h3>\`;
-                } else if (trimmedLine.startsWith('### ')) {
-                    if (inList) { html += '</ul>'; inList = false; }
-                    html += \`<h4 class="text-lg font-bold mt-4 mb-2">\${trimmedLine.substring(4)}</h4>\`;
-                } else if (trimmedLine.startsWith('- ')) {
-                    if (!inList) { html += '<ul class="list-disc pl-5 space-y-1">'; inList = true; }
-                    html += \`<li>\${trimmedLine.substring(2)}</li>\`;
-                } else {
-                    if (inList) { html += '</ul>'; inList = false; }
-                    if (trimmedLine) html += \`<p>\${trimmedLine}</p>\`;
-                }
-            }
-            if (inList) { html += '</ul>'; }
-
-            html = html.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>');
-            html = html.replace(/\\*(.*?)\\*/g, '<em>$1</em>');
-            
-            return html;
+            return md
+                .replace(/^### (.*$)/gim, '<h4 class="text-lg font-bold mt-4 mb-2">$1</h4>')
+                .replace(/^## (.*$)/gim, '<h3 class="text-xl font-bold mt-6 mb-3 border-b pb-2">$1</h3>')
+                .replace(/\* \*(.*?)\* \*/gim, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+                .replace(/^- (.*$)/gim, (match, content) => \`<li class="ml-4 list-disc">\${content.trim()}</li>\`)
+                .replace(/\\n/g, '<br>');
         }
     </script>
 </body>

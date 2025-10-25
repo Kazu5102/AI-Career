@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { marked } from 'marked';
 import { SkillMatchingResult } from '../types';
 import BriefcaseIcon from './icons/BriefcaseIcon';
@@ -15,14 +15,6 @@ interface SkillMatchingModalProps {
   error: string | null;
 }
 
-const loadingMessages = [
-    "AIがあなたのキャリアを分析中です...",
-    "過去の相談内容から強みを抽出しています...",
-    "あなたの価値観と興味を分析しています...",
-    "最適な職種とのマッチングを行っています...",
-    "これには1分ほどかかる場合があります。",
-    "レポートを生成しています。もうしばらくお待ちください..."
-];
 
 const createMarkup = (markdownText: string | undefined) => {
     if (!markdownText) return { __html: '' };
@@ -31,25 +23,7 @@ const createMarkup = (markdownText: string | undefined) => {
 };
 
 const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose, result, isLoading, error }) => {
-  const [loadingMessage, setLoadingMessage] = useState(loadingMessages[0]);
-
-  useEffect(() => {
-    // FIX: Changed NodeJS.Timeout to ReturnType<typeof setTimeout> for browser compatibility.
-    let interval: ReturnType<typeof setTimeout> | null = null;
-    if (isOpen && isLoading) {
-        let messageIndex = 0;
-        setLoadingMessage(loadingMessages[0]);
-        interval = setInterval(() => {
-            messageIndex = (messageIndex + 1) % loadingMessages.length;
-            setLoadingMessage(loadingMessages[messageIndex]);
-        }, 3500); // Change message every 3.5 seconds
-    }
-    return () => {
-        if (interval) clearInterval(interval);
-    };
-  }, [isOpen, isLoading]);
-
-
+  
   if (!isOpen) return null;
   
   const renderContent = () => {
@@ -57,14 +31,15 @@ const SkillMatchingModal: React.FC<SkillMatchingModalProps> = ({ isOpen, onClose
       return (
         <div className="flex flex-col items-center justify-center h-full text-slate-600 p-8 text-center">
           <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-          <p className="text-lg font-semibold">{loadingMessage}</p>
+          <p className="text-lg font-semibold">AIがあなたのキャリアを分析中です...</p>
+          <p className="text-sm text-slate-500 mt-2">これには1分ほどかかる場合があります。</p>
         </div>
       );
     }
 
     if (error) {
        return (
-        <div className="flex flex-col items-center justify-center h-full text-center text-red-600 bg-red-50 p-8">
+        <div className="flex flex-col items-center justify-center h-full text-center text-red-600 bg-red-50 p-8 rounded-lg">
             <h3 className="font-bold text-lg">エラーが発生しました</h3>
             <p className="mt-2 text-sm">{error}</p>
         </div>

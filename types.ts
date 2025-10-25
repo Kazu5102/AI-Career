@@ -129,7 +129,16 @@ export interface UserAnalysisCache {
 
 // --- NEW TYPES FOR INDIVIDUAL ANALYSIS STATE MANAGEMENT ---
 export type AnalysisType = 'trajectory' | 'skillMatching' | 'hiddenPotential';
-export type AnalysisStatus = 'idle' | 'loading' | 'error';
+// FIX: Added 'success' state to allow for correct state management after analysis.
+export type AnalysisStatus = 'idle' | 'loading' | 'error' | 'success';
+
 export type IndividualAnalysisState = {
     [key in AnalysisType]?: AnalysisStatus;
 };
+
+// --- NEW TYPE FOR COMPREHENSIVE ANALYSIS ---
+export interface ComprehensiveAnalysisState {
+    status: AnalysisStatus;
+    data: AnalysisData | null;
+    error: string | null;
+}

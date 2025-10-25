@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { marked } from 'marked';
 import { AnalysisData, UserAnalysisCache, ChartDataPoint, ConsultationEntry, SkillMatchingResult, TrajectoryAnalysisData, RecommendedRole, SkillToDevelop, LearningResource, HiddenPotentialData } from '../types';
@@ -14,6 +15,8 @@ import LightbulbIcon from './icons/LightbulbIcon';
 import LinkIcon from './icons/LinkIcon';
 import BrainIcon from './icons/BrainIcon';
 import SparklesIcon from './icons/SparklesIcon';
+import TrajectoryIcon from './icons/TrajectoryIcon';
+import TargetIcon from './icons/TargetIcon';
 
 
 interface AnalysisDisplayProps {
@@ -36,16 +39,14 @@ const isObject = (val: any): val is object => typeof val === 'object' && val !==
 // --- Reusable Card Components (with enhanced type safety) ---
 const KeyTakeawaysCard: React.FC<{ takeaways: string[] | undefined }> = ({ takeaways }) => {
     const safeTakeaways = isValidStringArray(takeaways) ? takeaways : [];
-    if (safeTakeaways.length === 0) {
-        return null;
-    }
+    if (safeTakeaways.length === 0) return null;
     return (
-        <div className="bg-sky-50 p-6 rounded-xl shadow-md border border-sky-200">
-            <div className="flex items-center gap-3 mb-4">
+        <div className="bg-sky-50 p-4 rounded-xl shadow-md border border-sky-200">
+            <div className="flex items-center gap-3 mb-3">
                 <div className="bg-sky-100 text-sky-600 p-2 rounded-lg"><SparklesIcon /></div>
-                <h3 className="text-lg font-bold text-slate-800">分析ハイライト</h3>
+                <h3 className="text-md font-bold text-slate-800">分析ハイライト</h3>
             </div>
-            <ul className="space-y-2 list-disc list-inside text-slate-700">
+            <ul className="space-y-1.5 list-disc list-inside text-slate-700 text-sm">
                 {safeTakeaways.map((item, index) => <li key={index}>{item}</li>)}
             </ul>
         </div>
@@ -90,10 +91,10 @@ const ChartSection: React.FC<{ title: string; data: ChartDataPoint[] | undefined
 const InfoListCard: React.FC<{ title: string; items: string[] | undefined; icon: React.ReactNode; iconBgColor: string, iconColor: string }> = ({ title, items, icon, iconBgColor, iconColor }) => {
     const safeItems = isValidStringArray(items) ? items : [];
     return (
-     <div className="bg-white p-6 rounded-xl shadow-md">
-        <div className="flex items-center gap-3 mb-4"><div className={`p-2 rounded-lg ${iconBgColor} ${iconColor}`}>{icon}</div><h3 className="text-lg font-bold text-slate-800">{title}</h3></div>
-        <div className="flex flex-wrap gap-2">
-            {safeItems.length > 0 ? safeItems.map(item => <span key={item} className="bg-slate-100 text-slate-700 text-sm font-medium px-3 py-1 rounded-full">{item}</span>)
+     <div className="bg-white p-4 rounded-xl shadow-md">
+        <div className="flex items-center gap-3 mb-3"><div className={`p-2 rounded-lg ${iconBgColor} ${iconColor}`}>{icon}</div><h3 className="text-md font-bold text-slate-800">{title}</h3></div>
+        <div className="flex flex-wrap gap-1.5">
+            {safeItems.length > 0 ? safeItems.map(item => <span key={item} className="bg-slate-100 text-slate-700 text-xs font-medium px-2 py-1 rounded-full">{item}</span>)
              : <p className="text-sm text-slate-500">該当する項目はありませんでした。</p>}
         </div>
     </div>
@@ -105,86 +106,53 @@ const ConsultationList: React.FC<{consultations: ConsultationEntry[] | undefined
         .filter(c => isObject(c) && isValidString(c.dateTime) && isValidNumber(c.estimatedDurationMinutes));
         
     return (
-    <div className="bg-white p-6 rounded-xl shadow-md"><div className="flex items-center gap-3 mb-4"><div className="text-slate-500"><CalendarIcon /></div><h3 className="text-lg font-bold text-slate-800">相談期間</h3></div><ul className="space-y-2 max-h-48 overflow-y-auto pr-2">{safeConsultations.map((c, index) => <li key={index} className="flex justify-between items-center text-sm p-2 bg-slate-50 rounded-md"><div className="flex items-center gap-2"><span className="font-semibold text-slate-800">{c.dateTime}</span></div><span className="text-slate-600 font-medium">約{c.estimatedDurationMinutes}分</span></li>)}{safeConsultations.length === 0 && <p className="text-sm text-slate-500">相談履歴の詳細データがありません。</p>}</ul></div>
+    <div className="bg-white p-4 rounded-xl shadow-md"><div className="flex items-center gap-3 mb-3"><div className="text-slate-500"><CalendarIcon /></div><h3 className="text-md font-bold text-slate-800">相談期間</h3></div><ul className="space-y-1.5 max-h-40 overflow-y-auto pr-2">{safeConsultations.map((c, index) => <li key={index} className="flex justify-between items-center text-xs p-2 bg-slate-50 rounded-md"><div className="flex items-center gap-2"><span className="font-semibold text-slate-800">{c.dateTime}</span></div><span className="text-slate-600 font-medium">約{c.estimatedDurationMinutes}分</span></li>)}{safeConsultations.length === 0 && <p className="text-sm text-slate-500">相談履歴の詳細データがありません。</p>}</ul></div>
     );
 };
 
 // --- Section Components for Individual Analysis ---
 const TrajectorySection: React.FC<{ data: TrajectoryAnalysisData | undefined }> = ({ data }) => {
-    if (!data) return <div className="text-center text-slate-500 p-4">相談の軌跡分析はまだ実行されていません。</div>;
-    return <div className="space-y-6">
+    if (!data) return null;
+    return <section className="space-y-4">
+        <div className="flex items-center gap-3">
+            <div className="bg-sky-100 text-sky-600 p-2 rounded-lg"><TrajectoryIcon /></div>
+            <h2 className="text-xl font-bold text-slate-800">相談の軌跡</h2>
+        </div>
         <KeyTakeawaysCard takeaways={data.keyTakeaways} />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><MetricCard title="相談件数" value={data.totalConsultations} icon={<BarChartIcon />} /></div>
-        <ConsultationList consultations={data.consultations} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <MetricCard title="相談件数" value={data.totalConsultations} icon={<BarChartIcon />} />
+            <ConsultationList consultations={data.consultations} />
+        </div>
         <InfoListCard title="キーテーマ" items={data.keyThemes} icon={<ChatIcon />} iconBgColor="bg-sky-100" iconColor="text-sky-600" />
         <InfoListCard title="検出された強み" items={data.detectedStrengths} icon={<TrendingUpIcon />} iconBgColor="bg-emerald-100" iconColor="text-emerald-600" />
         <InfoListCard title="今後の成長領域" items={data.areasForDevelopment} icon={<EditIcon />} iconBgColor="bg-amber-100" iconColor="text-amber-600" />
         <InfoListCard title="提案される次のステップ" items={data.suggestedNextSteps} icon={<CheckIcon />} iconBgColor="bg-violet-100" iconColor="text-violet-600" />
-        <div className="bg-white p-6 rounded-xl shadow-md"><h3 className="text-lg font-bold text-slate-800 mb-4">総合サマリー</h3><article className="prose prose-slate max-w-none" dangerouslySetInnerHTML={createMarkup(data.overallSummary)} /></div>
-    </div>;
+        <div className="bg-white p-4 rounded-xl shadow-md"><h3 className="text-md font-bold text-slate-800 mb-2">総合サマリー</h3><article className="prose prose-sm prose-slate max-w-none" dangerouslySetInnerHTML={createMarkup(data.overallSummary)} /></div>
+    </section>;
 };
 
-const SkillMatchingSection: React.FC<{ data: SkillMatchingResult | undefined }> = ({ data }) => {
-    if (!data) return <div className="text-center text-slate-500 p-4">適性診断はまだ実行されていません。</div>;
-
-    const recommendedRoles = (Array.isArray(data.recommendedRoles) ? data.recommendedRoles : [])
-        .filter((r): r is RecommendedRole => isObject(r) && isValidString(r.role) && isValidString(r.reason) && isValidNumber(r.matchScore));
-    const skillsToDevelop = (Array.isArray(data.skillsToDevelop) ? data.skillsToDevelop : [])
-        .filter((s): s is SkillToDevelop => isObject(s) && isValidString(s.skill) && isValidString(s.reason));
-    const learningResources = (Array.isArray(data.learningResources) ? data.learningResources : [])
-        .filter((l): l is LearningResource => isObject(l) && isValidString(l.title) && isValidString(l.type) && isValidString(l.provider));
-
-
-    return <div className="space-y-6">
-        <KeyTakeawaysCard takeaways={data.keyTakeaways} />
-        <div className="bg-white p-6 rounded-xl shadow-md"><h3 className="text-xl font-bold text-slate-800 border-b-2 border-slate-200 pb-2 mb-4">キャリアプロファイル分析</h3><article className="prose prose-slate max-w-none prose-sm" dangerouslySetInnerHTML={createMarkup(data.analysisSummary)} /></div>
-        <div className="bg-white p-6 rounded-xl shadow-md"><div className="flex items-center gap-3 mb-4"><div className="bg-sky-100 text-sky-600 p-2 rounded-lg"><BriefcaseIcon /></div><h3 className="text-lg font-bold text-slate-800">推奨される職種</h3></div><div className="space-y-4">{recommendedRoles.length > 0 ? recommendedRoles.map(role => <div key={role.role} className="bg-slate-50 border border-slate-200 p-4 rounded-lg"><div className="flex justify-between items-start gap-4"><h4 className="font-bold text-md text-sky-800">{role.role}</h4><div className="text-right flex-shrink-0"><p className="text-xs text-slate-500">マッチ度</p><p className="font-bold text-lg text-sky-600">{role.matchScore}%</p></div></div><div className="w-full bg-slate-200 rounded-full h-2.5 my-2"><div className="bg-sky-500 h-2.5 rounded-full" style={{ width: `${role.matchScore}%` }}></div></div><p className="text-sm text-slate-600 mt-2">{role.reason}</p></div>) : <p className="text-sm text-slate-500">推奨される職種はありませんでした。</p>}</div></div>
-        <div className="bg-white p-6 rounded-xl shadow-md"><div className="flex items-center gap-3 mb-4"><div className="bg-emerald-100 text-emerald-600 p-2 rounded-lg"><LightbulbIcon /></div><h3 className="text-lg font-bold text-slate-800">伸ばすと良いスキル</h3></div><div className="space-y-3">{skillsToDevelop.length > 0 ? skillsToDevelop.map(skill => <div key={skill.skill} className="bg-slate-50 p-3 rounded-lg"><h4 className="font-semibold text-emerald-800">{skill.skill}</h4><p className="text-sm text-slate-600">{skill.reason}</p></div>) : <p className="text-sm text-slate-500">特に提案されたスキルはありませんでした。</p>}</div></div>
-        <div className="bg-white p-6 rounded-xl shadow-md">
-            <div className="flex items-center gap-3 mb-4">
-                <div className="bg-violet-100 text-violet-600 p-2 rounded-lg"><LinkIcon /></div>
-                <h3 className="text-lg font-bold text-slate-800">おすすめ学習リソース</h3>
-            </div>
-            <p className="text-xs text-slate-500 bg-slate-100 p-2 rounded-md mb-4">
-                リンク切れを防ぎ、常に最新の情報にアクセスできるよう、直接のリンクの代わりに検索リンクを提供しています。タイトルと提供元をご確認の上、公式サイトからアクセスしてください。
-            </p>
-            <div className="space-y-2">
-                {learningResources.length > 0 ? learningResources.map(res => {
-                    const searchQuery = encodeURIComponent(`${res.provider} ${res.title}`);
-                    const searchUrl = `https://www.google.com/search?q=${searchQuery}`;
-                    return (
-                        <a href={searchUrl} target="_blank" rel="noopener noreferrer" key={res.title} className="block bg-slate-50 p-3 rounded-lg hover:bg-slate-100 group">
-                            <div className="flex items-center justify-between">
-                                <h4 className="font-semibold text-violet-800 group-hover:underline">{res.title}</h4>
-                                <span className="text-xs font-medium bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">{res.type}</span>
-                            </div>
-                            <p className="text-sm text-slate-600 mt-1">提供元: <span className="font-semibold">{res.provider}</span></p>
-                        </a>
-                    );
-                }) : <p className="text-sm text-slate-500">おすすめの学習リソースはありませんでした。</p>}
-            </div>
-        </div>
-    </div>;
-};
 
 const HiddenPotentialSection: React.FC<{ data: HiddenPotentialData | undefined }> = ({ data }) => {
-    if (!data) return <div className="text-center text-slate-500 p-4">隠れた可能性の分析はまだ実行されていません。</div>;
+    if (!data) return null;
     
     const hiddenSkills = (Array.isArray(data.hiddenSkills) ? data.hiddenSkills : [])
         .filter((s): s is SkillToDevelop => isObject(s) && isValidString(s.skill) && isValidString(s.reason));
 
+    if (hiddenSkills.length === 0) return null;
 
-    return <div className="bg-yellow-50 border-2 border-dashed border-yellow-300 p-6 rounded-xl shadow-md">
-        <div className="flex items-center gap-3 mb-4"><div className="bg-yellow-100 text-yellow-600 p-2 rounded-lg"><BrainIcon /></div><h3 className="text-lg font-bold text-yellow-800">コンサルタント向け: 隠れた可能性</h3></div>
-        <p className="text-sm text-yellow-700 mb-4">クライアント本人も気づいていない、または言語化できていない潜在的な強みです。</p>
-        <div className="space-y-3">{hiddenSkills.length > 0 ? hiddenSkills.map(skill => <div key={skill.skill} className="bg-white/70 p-3 rounded-lg"><h4 className="font-semibold text-yellow-900">{skill.skill}</h4><p className="text-sm text-slate-600">{skill.reason}</p></div>)
-        : <p className="text-sm text-slate-500">特筆すべき隠れた可能性はありませんでした。</p>}</div>
-    </div>;
+    return <section className="bg-amber-50 border-2 border-dashed border-amber-300 p-4 rounded-xl shadow-md">
+        <div className="flex items-center gap-3 mb-3">
+            <div className="bg-amber-100 text-amber-600 p-2 rounded-lg"><BrainIcon /></div>
+            <h2 className="text-xl font-bold text-amber-800">コンサルタント向け: 隠れた可能性</h2>
+        </div>
+        <p className="text-sm text-amber-700 mb-3">クライアント本人も気づいていない、または言語化できていない潜在的な強みです。</p>
+        <div className="space-y-2">{hiddenSkills.map(skill => <div key={skill.skill} className="bg-white/70 p-3 rounded-lg"><h4 className="font-semibold text-amber-900 text-sm">{skill.skill}</h4><p className="text-xs text-slate-600">{skill.reason}</p></div>)}</div>
+    </section>;
 };
 
 // --- Main Component ---
 const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ cache }) => {
-    if (!cache) return <div className="text-center text-slate-500 p-4">分析データを表示する準備ができました。左のツールキットから分析を実行してください。</div>;
+    if (!cache) return null;
     
     // Comprehensive Analysis View
     if (cache.comprehensive) {
@@ -209,11 +177,24 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ cache }) => {
     }
 
     // Individual Analysis View
+    const analysisError = (cache.trajectory as any)?.error || (cache.hiddenPotential as any)?.error;
+    if(analysisError) {
+        return (
+             <div className="flex flex-col items-center justify-center h-full text-center text-red-500 bg-red-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-lg">分析エラー</h3>
+                <p className="mt-1">{analysisError}</p>
+            </div>
+        )
+    }
+
+    if (!cache.trajectory && !cache.hiddenPotential) {
+        return null; // Don't render anything if there's no individual data
+    }
+
     return (
         <div className="space-y-8">
-            <section><h2 className="text-2xl font-bold text-slate-800 border-b-2 border-sky-200 pb-2">相談の軌跡</h2><div className="mt-4"><TrajectorySection data={cache.trajectory} /></div></section>
-            <section><h2 className="text-2xl font-bold text-slate-800 border-b-2 border-sky-200 pb-2">適性診断</h2><div className="mt-4"><SkillMatchingSection data={cache.skillMatching} /></div></section>
-            <section><h2 className="text-2xl font-bold text-slate-800 border-b-2 border-sky-200 pb-2">隠れた可能性</h2><div className="mt-4"><HiddenPotentialSection data={cache.hiddenPotential} /></div></section>
+            <TrajectorySection data={cache.trajectory} />
+            <HiddenPotentialSection data={cache.hiddenPotential} />
         </div>
     );
 };
