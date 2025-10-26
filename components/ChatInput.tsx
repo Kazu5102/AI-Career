@@ -75,7 +75,9 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
   // Auto-resize textarea based on content
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'; // Reset height to calculate new scrollHeight
+      // FIX: Use a more robust resizing logic by resetting height to '0px'
+      // to force the browser to accurately recalculate scrollHeight.
+      textareaRef.current.style.height = '0px'; 
       const scrollHeight = textareaRef.current.scrollHeight;
       const maxHeight = 200; // Max height for approx 5-6 lines
       

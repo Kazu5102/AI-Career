@@ -23,13 +23,14 @@ interface UserDashboardProps {
 const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat, onResume, userId, nickname, onSwitchUser }) => {
   const [selectedConversation, setSelectedConversation] = useState<StoredConversation | null>(null);
   const [isMatchingModalOpen, setIsMatchingModalOpen] = useState(false);
-  // FIX: Refactored state to use a single object that matches the modal's expected props.
   const [skillMatchingState, setSkillMatchingState] = useState<AnalysisStateItem<SkillMatchingResult>>({
     status: 'idle',
     data: null,
     error: null,
   });
   const [isExportSuccessModalOpen, setIsExportSuccessModalOpen] = useState(false);
+  // FIX: Added state to track the export process and provide user feedback.
+  const [isExporting, setIsExporting] = useState(false);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ja-JP', {
@@ -53,7 +54,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
     }
     
     setIsMatchingModalOpen(true);
-    // FIX: Updated state management to use the new single state object.
     setSkillMatchingState({ status: 'loading', data: null, error: null });
 
     try {
@@ -67,59 +67,64 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
   };
 
   const handleExportUserData = async () => {
-      if (conversations.length === 0) {
+      if (conversations.length === 0 || isExporting) {
           alert("エクスポートするデータがありません。");
           return;
       }
+      
+      setIsExporting(true);
 
-      const dataToStore: StoredData = {
-          version: STORAGE_VERSION,
-          data: conversations,
-      };
-      const blob = new Blob([JSON.stringify(dataToStore, null, 2)], { type: 'application/json' });
-      const date = new Date().toISOString().split('T')[0];
-      const suggestedName = `consulting_data_${userId}_${date}.json`;
+      try {
+          const dataToStore: StoredData = {
+              version: STORAGE_VERSION,
+              data: conversations,
+          };
+          const blob = new Blob([JSON.stringify(dataToStore, null, 2)], { type: 'application/json' });
+          const date = new Date().toISOString().split('T')[0];
+          const suggestedName = `consulting_data_${userId}_${date}.json`;
 
-      // Modern approach with File System Access API
-      // Use `as any` to bypass TypeScript errors for this experimental API
-      const FsaWindow = window as any;
-      if (FsaWindow.showSaveFilePicker) {
-          try {
-              const handle = await FsaWindow.showSaveFilePicker({
-                  suggestedName,
-                  types: [{
-                      description: 'JSON Files',
-                      accept: { 'application/json': ['.json'] },
-                  }],
-              });
-              const writable = await handle.createWritable();
-              await writable.write(blob);
-              await writable.close();
-              setIsExportSuccessModalOpen(true);
-          } catch (err) {
-              if (err instanceof DOMException && err.name === 'AbortError') {
-                  console.log('File save cancelled by user.');
-              } else {
-                  console.error('Error saving file:', err);
-                  alert(`ファイルの保存中にエラーが発生しました。`);
+          // Modern approach with File System Access API
+          const FsaWindow = window as any;
+          if (FsaWindow.showSaveFilePicker) {
+              try {
+                  const handle = await FsaWindow.showSaveFilePicker({
+                      suggestedName,
+                      types: [{
+                          description: 'JSON Files',
+                          accept: { 'application/json': ['.json'] },
+                      }],
+                  });
+                  const writable = await handle.createWritable();
+                  await writable.write(blob);
+                  await writable.close();
+                  setIsExportSuccessModalOpen(true);
+              } catch (err) {
+                  if (err instanceof DOMException && err.name === 'AbortError') {
+                      console.log('File save cancelled by user.');
+                  } else {
+                      console.error('Error saving file:', err);
+                      alert(`ファイルの保存中にエラーが発生しました。`);
+                  }
+              }
+          } else {
+              // Fallback for older browsers
+              try {
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = suggestedName;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                  setIsExportSuccessModalOpen(true);
+              } catch (err) {
+                  console.error('Error with fallback save method:', err);
+                  alert(`ファイルのダウンロード中にエラーが発生しました。`);
               }
           }
-      } else {
-          // Fallback for older browsers
-          try {
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = suggestedName;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-              setIsExportSuccessModalOpen(true);
-          } catch (err) {
-              console.error('Error with fallback save method:', err);
-              alert(`ファイルのダウンロード中にエラーが発生しました。`);
-          }
+      } finally {
+        setIsExporting(false);
       }
   };
 
@@ -156,11 +161,20 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
                 </button>
                  <button
                   onClick={handleExportUserData}
-                  disabled={conversations.length === 0}
+                  disabled={conversations.length === 0 || isExporting}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-600 text-white font-semibold rounded-lg shadow-md hover:bg-slate-700 disabled:bg-slate-400"
                 >
-                    <ExportIcon />
-                    管理者へデータ提出
+                    {isExporting ? (
+                        <>
+                           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                           <span>エクスポート中...</span>
+                        </>
+                    ) : (
+                        <>
+                            <ExportIcon />
+                            管理者へデータ提出
+                        </>
+                    )}
                 </button>
              </div>
              <h2 className="text-lg font-bold text-slate-800 mb-2">相談履歴 ({conversations.length}件)</h2>
@@ -204,7 +218,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
         />
       )}
 
-      {/* FIX: Replaced individual props with a single `analysisState` prop to match the component's definition. */}
       <SkillMatchingModal
         isOpen={isMatchingModalOpen}
         onClose={() => {
