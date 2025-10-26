@@ -66,26 +66,61 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
     }
   };
 
-  const handleExportUserData = () => {
+  const handleExportUserData = async () => {
       if (conversations.length === 0) {
           alert("エクスポートするデータがありません。");
           return;
       }
+
       const dataToStore: StoredData = {
           version: STORAGE_VERSION,
           data: conversations,
       };
       const blob = new Blob([JSON.stringify(dataToStore, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
       const date = new Date().toISOString().split('T')[0];
-      a.download = `consulting_data_${userId}_${date}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setIsExportSuccessModalOpen(true);
+      const suggestedName = `consulting_data_${userId}_${date}.json`;
+
+      // Modern approach with File System Access API
+      // Use `as any` to bypass TypeScript errors for this experimental API
+      const FsaWindow = window as any;
+      if (FsaWindow.showSaveFilePicker) {
+          try {
+              const handle = await FsaWindow.showSaveFilePicker({
+                  suggestedName,
+                  types: [{
+                      description: 'JSON Files',
+                      accept: { 'application/json': ['.json'] },
+                  }],
+              });
+              const writable = await handle.createWritable();
+              await writable.write(blob);
+              await writable.close();
+              setIsExportSuccessModalOpen(true);
+          } catch (err) {
+              if (err instanceof DOMException && err.name === 'AbortError') {
+                  console.log('File save cancelled by user.');
+              } else {
+                  console.error('Error saving file:', err);
+                  alert(`ファイルの保存中にエラーが発生しました。`);
+              }
+          }
+      } else {
+          // Fallback for older browsers
+          try {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = suggestedName;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              setIsExportSuccessModalOpen(true);
+          } catch (err) {
+              console.error('Error with fallback save method:', err);
+              alert(`ファイルのダウンロード中にエラーが発生しました。`);
+          }
+      }
   };
 
   return (

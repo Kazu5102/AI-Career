@@ -66,11 +66,29 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [micError, setMicError] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setText(isEditing ? initialText : '');
   }, [isEditing, initialText]);
   
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // Reset height to calculate new scrollHeight
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const maxHeight = 200; // Max height for approx 5-6 lines
+      
+      if (scrollHeight > maxHeight) {
+        textareaRef.current.style.height = `${maxHeight}px`;
+        textareaRef.current.style.overflowY = 'auto';
+      } else {
+        textareaRef.current.style.height = `${scrollHeight}px`;
+        textareaRef.current.style.overflowY = 'hidden';
+      }
+    }
+  }, [text]);
+
   const handleMicClick = () => {
     // Stop listening
     if (isListening) {
@@ -145,12 +163,23 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleTextSubmit = () => {
     if (!text.trim() || isLoading) return;
     onSubmit(text);
     if (!isEditing) {
         setText('');
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    handleTextSubmit();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleTextSubmit();
     }
   };
 
@@ -164,7 +193,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
     ? "お話しください..." 
     : isEditing 
     ? "メッセージを編集..." 
-    : "メッセージを入力してください...";
+    : "メッセージを入力してください (Shift+Enterで改行)";
 
   return (
     <div className="p-4">
@@ -176,14 +205,16 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
           </button>
         </div>
       )}
-      <form onSubmit={handleSubmit} className="flex items-center gap-3">
-        <input
-          type="text"
+      <form onSubmit={handleSubmit} className="flex items-end gap-3">
+        <textarea
+          ref={textareaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder={placeholderText}
           disabled={isLoading || isListening}
-          className="flex-1 w-full px-4 py-3 bg-slate-100 rounded-full border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition duration-200"
+          className="flex-1 w-full px-4 py-3 bg-slate-100 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition duration-200 resize-none overflow-y-hidden"
+          rows={1}
           autoFocus
         />
         <button
