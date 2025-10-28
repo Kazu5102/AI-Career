@@ -66,13 +66,15 @@ const ShareReportModal: React.FC<ShareReportModalProps> = ({ isOpen, onClose, us
                     await writable.close();
                     onClose();
                 } catch (err) {
-                    // Gracefully handle user cancellation (AbortError) without crashing.
-                    if (err instanceof DOMException && err.name === 'AbortError') {
-                        console.log('File save cancelled by user.');
-                    } else {
+                    // The user canceling the save dialog throws an error named 'AbortError'.
+                    // We check for this specific error name to ignore it, preventing a crash.
+                    // All other errors are reported to the user.
+                    if ((err as any)?.name !== 'AbortError') {
                         console.error('Error saving file:', err);
                         const message = err instanceof Error ? err.message : String(err);
                         alert(`ファイルの保存中にエラーが発生しました: ${message}`);
+                    } else {
+                        console.log('File save cancelled by user.');
                     }
                 }
             } else {
