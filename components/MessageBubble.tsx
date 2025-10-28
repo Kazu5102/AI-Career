@@ -46,7 +46,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isEditable, onEd
           <EditIcon />
         </button>
       )}
-      <div className={`max-w-lg lg:max-w-2xl px-5 py-3 rounded-2xl ${bubbleClasses} ${isUser ? 'rounded-br-lg' : 'rounded-bl-lg'}`}>
+      <div className={`max-w-lg lg:max-w-2xl px-5 py-3 rounded-2xl ${bubbleClasses} ${isUser ? 'rounded-br-lg' : 'rounded-bl-lg'} break-words`}>
         {message.text ? (
           <div dangerouslySetInnerHTML={createMarkup(message.text)} />
         ) : (
