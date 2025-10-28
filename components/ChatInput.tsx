@@ -61,6 +61,8 @@ interface ChatInputProps {
   onCancelEdit: () => void;
 }
 
+const MAX_TEXTAREA_HEIGHT = 128; // Set a max height of 128px (approx. 5-6 lines)
+
 const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, initialText, onCancelEdit }) => {
   const [text, setText] = useState('');
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -72,11 +74,20 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
     setText(isEditing ? initialText : '');
   }, [isEditing, initialText]);
   
-  // Auto-resize textarea to show all content without a scrollbar
+  // Auto-resize textarea to show all content, with a max height.
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'; // Reset height to get accurate scrollHeight
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`; // Set height to full content height
+      const textarea = textareaRef.current;
+      textarea.style.height = 'auto'; // Reset height to get accurate scrollHeight
+      const scrollHeight = textarea.scrollHeight;
+
+      if (scrollHeight > MAX_TEXTAREA_HEIGHT) {
+        textarea.style.height = `${MAX_TEXTAREA_HEIGHT}px`;
+        textarea.style.overflowY = 'auto'; // Show scrollbar when max height is reached
+      } else {
+        textarea.style.height = `${scrollHeight}px`;
+        textarea.style.overflowY = 'hidden'; // Hide scrollbar when below max height
+      }
     }
   }, [text]);
 

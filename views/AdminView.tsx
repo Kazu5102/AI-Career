@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { StoredConversation, StoredData, UserInfo, STORAGE_VERSION, AnalysisType, AnalysesState, UserAnalysisCache, AnalysisStateItem } from '../types';
 import * as userService from '../services/userService';
@@ -240,7 +241,8 @@ const AdminView: React.FC = () => {
     };
     
     const selectedUserConversations = selectedUserId ? (conversationsByUser[selectedUserId] || []).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) : [];
-    const isAnyAnalysisLoading = Object.values(analysesState).some(s => s.status === 'loading');
+    // FIX: Add explicit type annotation to the callback parameter `s` to resolve the error.
+    const isAnyAnalysisLoading = Object.values(analysesState).some((s: AnalysisStateItem<unknown>) => s.status === 'loading');
     
     // FIX: Refactored function to be type-safe by handling each analysis type explicitly, avoiding complex union/intersection type errors.
     const convertStateToCacheForReport = (state: AnalysesState): UserAnalysisCache => {
