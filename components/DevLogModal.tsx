@@ -41,10 +41,11 @@ const DevLogModal: React.FC<DevLogModalProps> = ({ isOpen, onClose }) => {
     const date = new Date().toISOString().split('T')[0];
     const suggestedName = `dev_log_${date}.json`;
 
-    const FsaWindow = window as any;
-    if (FsaWindow.showSaveFilePicker) {
+    const canUseFsa = window.isSecureContext && (window as any).showSaveFilePicker;
+
+    if (canUseFsa) {
         try {
-            const handle = await FsaWindow.showSaveFilePicker({
+            const handle = await (window as any).showSaveFilePicker({
                 suggestedName,
                 types: [{
                     description: 'JSON Files',
@@ -55,19 +56,15 @@ const DevLogModal: React.FC<DevLogModalProps> = ({ isOpen, onClose }) => {
             await writable.write(blob);
             await writable.close();
         } catch (err) {
-            // The user canceling the save dialog throws an error named 'AbortError'.
-            // We check for this specific error name to ignore it, preventing a crash.
-            // All other errors are reported to the user.
-            if ((err as any)?.name !== 'AbortError') {
-                console.error('Error saving file:', err);
-                const message = err instanceof Error ? err.message : String(err);
-                alert(`ファイルの保存中にエラーが発生しました: ${message}`);
+            if ((err as DOMException)?.name !== 'AbortError') {
+                console.error('Error saving file with showSaveFilePicker:', err);
+                alert(`ファイルの保存中に予期せぬエラーが発生しました。`);
             } else {
                 console.log('File save cancelled by user.');
             }
         }
     } else {
-        // Fallback for older browsers
+        // Fallback for insecure contexts or older browsers
         try {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');

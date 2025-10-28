@@ -83,11 +83,12 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
           const date = new Date().toISOString().split('T')[0];
           const suggestedName = `consulting_data_${userId}_${date}.json`;
 
-          // Modern approach with File System Access API
-          const FsaWindow = window as any;
-          if (FsaWindow.showSaveFilePicker) {
+          // Proposal 1: Use showSaveFilePicker only in secure contexts, otherwise use fallback.
+          const canUseFsa = window.isSecureContext && (window as any).showSaveFilePicker;
+
+          if (canUseFsa) {
               try {
-                  const handle = await FsaWindow.showSaveFilePicker({
+                  const handle = await (window as any).showSaveFilePicker({
                       suggestedName,
                       types: [{
                           description: 'JSON Files',
@@ -99,19 +100,15 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
                   await writable.close();
                   setIsExportSuccessModalOpen(true);
               } catch (err) {
-                  // The user canceling the save dialog throws an error named 'AbortError'.
-                  // We check for this specific error name to ignore it, preventing a crash.
-                  // All other errors are reported to the user.
-                  if ((err as any)?.name !== 'AbortError') {
-                      console.error('Error saving file:', err);
-                      const message = err instanceof Error ? err.message : String(err);
-                      alert(`ファイルの保存中にエラーが発生しました: ${message}`);
+                  if ((err as DOMException)?.name !== 'AbortError') {
+                      console.error('Error saving file with showSaveFilePicker:', err);
+                      alert(`ファイルの保存中に予期せぬエラーが発生しました。`);
                   } else {
                       console.log('File save cancelled by user.');
                   }
               }
           } else {
-              // Fallback for older browsers
+              // Fallback for insecure contexts or older browsers
               try {
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
@@ -131,6 +128,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
         setIsExporting(false);
       }
   };
+
 
   return (
     <>
