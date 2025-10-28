@@ -41,43 +41,19 @@ const DevLogModal: React.FC<DevLogModalProps> = ({ isOpen, onClose }) => {
     const date = new Date().toISOString().split('T')[0];
     const suggestedName = `dev_log_${date}.json`;
 
-    const canUseFsa = window.isSecureContext && (window as any).showSaveFilePicker;
-
-    if (canUseFsa) {
-        try {
-            const handle = await (window as any).showSaveFilePicker({
-                suggestedName,
-                types: [{
-                    description: 'JSON Files',
-                    accept: { 'application/json': ['.json'] },
-                }],
-            });
-            const writable = await handle.createWritable();
-            await writable.write(blob);
-            await writable.close();
-        } catch (err) {
-            if ((err as DOMException)?.name !== 'AbortError') {
-                console.error('Error saving file with showSaveFilePicker:', err);
-                alert(`ファイルの保存中に予期せぬエラーが発生しました。`);
-            } else {
-                console.log('File save cancelled by user.');
-            }
-        }
-    } else {
-        // Fallback for insecure contexts or older browsers
-        try {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = suggestedName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        } catch (err) {
-            console.error('Error with fallback save method:', err);
-            alert(`ファイルのダウンロード中にエラーが発生しました。`);
-        }
+    // Proposal 1: Unify to a single, stable download method to prevent crashes.
+    try {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = suggestedName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error('Error during log export:', err);
+        alert(`ログのエクスポート中にエラーが発生しました。`);
     }
   };
   

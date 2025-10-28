@@ -83,47 +83,21 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
           const date = new Date().toISOString().split('T')[0];
           const suggestedName = `consulting_data_${userId}_${date}.json`;
 
-          // Proposal 1: Use showSaveFilePicker only in secure contexts, otherwise use fallback.
-          const canUseFsa = window.isSecureContext && (window as any).showSaveFilePicker;
+          // Proposal 1: Unify to a single, stable download method to prevent crashes.
+          // This method creates a temporary link and simulates a click.
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = suggestedName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          setIsExportSuccessModalOpen(true);
 
-          if (canUseFsa) {
-              try {
-                  const handle = await (window as any).showSaveFilePicker({
-                      suggestedName,
-                      types: [{
-                          description: 'JSON Files',
-                          accept: { 'application/json': ['.json'] },
-                      }],
-                  });
-                  const writable = await handle.createWritable();
-                  await writable.write(blob);
-                  await writable.close();
-                  setIsExportSuccessModalOpen(true);
-              } catch (err) {
-                  if ((err as DOMException)?.name !== 'AbortError') {
-                      console.error('Error saving file with showSaveFilePicker:', err);
-                      alert(`ファイルの保存中に予期せぬエラーが発生しました。`);
-                  } else {
-                      console.log('File save cancelled by user.');
-                  }
-              }
-          } else {
-              // Fallback for insecure contexts or older browsers
-              try {
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = suggestedName;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                  setIsExportSuccessModalOpen(true);
-              } catch (err) {
-                  console.error('Error with fallback save method:', err);
-                  alert(`ファイルのダウンロード中にエラーが発生しました。`);
-              }
-          }
+      } catch (err) {
+          console.error('Error during file export:', err);
+          alert(`ファイルのダウンロード中にエラーが発生しました。`);
       } finally {
         setIsExporting(false);
       }

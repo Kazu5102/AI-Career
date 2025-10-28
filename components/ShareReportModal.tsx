@@ -51,50 +51,21 @@ const ShareReportModal: React.FC<ShareReportModalProps> = ({ isOpen, onClose, us
             const date = new Date().toISOString().split('T')[0];
             const suggestedName = `report_${userId}_${date}.html`;
 
-            const canUseFsa = window.isSecureContext && (window as any).showSaveFilePicker;
+            // Proposal 1: Unify to a single, stable download method to prevent crashes.
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = suggestedName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            onClose();
 
-            if (canUseFsa) {
-                try {
-                    const handle = await (window as any).showSaveFilePicker({
-                        suggestedName,
-                        types: [{
-                            description: 'HTML Files',
-                            accept: { 'text/html': ['.html'] },
-                        }],
-                    });
-                    const writable = await handle.createWritable();
-                    await writable.write(blob);
-                    await writable.close();
-                    onClose();
-                } catch (err) {
-                    if ((err as DOMException)?.name !== 'AbortError') {
-                        console.error('Error saving file with showSaveFilePicker:', err);
-                        alert(`ファイルの保存中に予期せぬエラーが発生しました。`);
-                    } else {
-                        console.log('File save cancelled by user.');
-                    }
-                }
-            } else {
-                // Fallback for insecure contexts or older browsers
-                try {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = suggestedName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    onClose();
-                } catch (err) {
-                    console.error('Error with fallback save method:', err);
-                    alert(`ファイルのダウンロード中にエラーが発生しました。`);
-                }
-            }
         } catch (err) {
-            console.error("Failed to generate report:", err);
+            console.error("Failed to generate and save report:", err);
             const message = err instanceof Error ? err.message : '不明なエラーです。';
-            setError(`レポートの生成に失敗しました: ${message}`);
+            setError(`レポートの生成または保存に失敗しました: ${message}`);
         } finally {
             setIsLoading(false);
         }
