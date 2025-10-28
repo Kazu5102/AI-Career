@@ -100,8 +100,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
                   setIsExportSuccessModalOpen(true);
               } catch (err) {
                   // Gracefully handle user cancellation (AbortError) without crashing.
-                  // The error might not always be a DOMException instance, so we check properties safely.
-                  if (typeof err === 'object' && err !== null && 'name' in err && err.name === 'AbortError') {
+                  if (err instanceof DOMException && err.name === 'AbortError') {
                       console.log('File save cancelled by user.');
                   } else {
                       console.error('Error saving file:', err);
