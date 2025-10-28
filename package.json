@@ -28,9 +28,6 @@
   },
   "overrides": {
     "glob": "10.4.2",
-    "rimraf": "5.0.7",
-    "are-we-there-yet": "4.0.2",
-    "gauge": "5.0.2",
-    "npmlog": "7.0.1"
+    "rimraf": "5.0.7"
   }
 }

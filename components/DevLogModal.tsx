@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import * as devLogService from '../services/devLogService';
 import { DevLogEntry } from '../services/devLogService';
@@ -29,22 +31,53 @@ const DevLogModal: React.FC<DevLogModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleExportLogs = () => {
+  const handleExportLogs = async () => {
     const logsData = devLogService.getLogs();
     if (logsData.entries.length === 0) {
       alert("エクスポートするログがありません。");
       return;
     }
     const blob = new Blob([JSON.stringify(logsData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
     const date = new Date().toISOString().split('T')[0];
-    a.download = `dev_log_${date}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const suggestedName = `dev_log_${date}.json`;
+
+    const FsaWindow = window as any;
+    if (FsaWindow.showSaveFilePicker) {
+        try {
+            const handle = await FsaWindow.showSaveFilePicker({
+                suggestedName,
+                types: [{
+                    description: 'JSON Files',
+                    accept: { 'application/json': ['.json'] },
+                }],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+        } catch (err) {
+            if (err instanceof DOMException && err.name === 'AbortError') {
+                console.log('File save cancelled by user.');
+            } else {
+                console.error('Error saving file:', err);
+                alert(`ファイルの保存中にエラーが発生しました。`);
+            }
+        }
+    } else {
+        // Fallback for older browsers
+        try {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = suggestedName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('Error with fallback save method:', err);
+            alert(`ファイルのダウンロード中にエラーが発生しました。`);
+        }
+    }
   };
   
   const formatDate = (dateString: string) => {

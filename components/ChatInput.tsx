@@ -72,22 +72,11 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
     setText(isEditing ? initialText : '');
   }, [isEditing, initialText]);
   
-  // Auto-resize textarea based on content
+  // Auto-resize textarea to show all content without a scrollbar
   useEffect(() => {
     if (textareaRef.current) {
-      // FIX: Use a more robust resizing logic by resetting height to '0px'
-      // to force the browser to accurately recalculate scrollHeight.
-      textareaRef.current.style.height = '0px'; 
-      const scrollHeight = textareaRef.current.scrollHeight;
-      const maxHeight = 200; // Max height for approx 5-6 lines
-      
-      if (scrollHeight > maxHeight) {
-        textareaRef.current.style.height = `${maxHeight}px`;
-        textareaRef.current.style.overflowY = 'auto';
-      } else {
-        textareaRef.current.style.height = `${scrollHeight}px`;
-        textareaRef.current.style.overflowY = 'hidden';
-      }
+      textareaRef.current.style.height = 'auto'; // Reset height to get accurate scrollHeight
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`; // Set height to full content height
     }
   }, [text]);
 
@@ -215,7 +204,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
           onKeyDown={handleKeyDown}
           placeholder={placeholderText}
           disabled={isLoading || isListening}
-          className="flex-1 w-full px-4 py-3 bg-slate-100 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition duration-200 resize-none overflow-y-hidden"
+          className="flex-1 w-full px-4 py-3 bg-slate-100 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition duration-200 resize-none"
           rows={1}
           autoFocus
         />

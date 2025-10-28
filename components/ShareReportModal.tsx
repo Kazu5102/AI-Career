@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { StoredConversation, UserAnalysisCache } from '../types';
 import { generateReport } from '../services/reportService';
@@ -47,17 +48,48 @@ const ShareReportModal: React.FC<ShareReportModalProps> = ({ isOpen, onClose, us
 
         try {
             const blob = await generateReport({ userId, conversations, analysisCache }, password);
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
             const date = new Date().toISOString().split('T')[0];
-            a.download = `report_${userId}_${date}.html`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            onClose();
+            const suggestedName = `report_${userId}_${date}.html`;
 
+            const FsaWindow = window as any;
+            if (FsaWindow.showSaveFilePicker) {
+                try {
+                    const handle = await FsaWindow.showSaveFilePicker({
+                        suggestedName,
+                        types: [{
+                            description: 'HTML Files',
+                            accept: { 'text/html': ['.html'] },
+                        }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    onClose();
+                } catch (err) {
+                    if (err instanceof DOMException && err.name === 'AbortError') {
+                        console.log('File save cancelled by user.');
+                    } else {
+                        console.error('Error saving file:', err);
+                        alert(`ファイルの保存中にエラーが発生しました。`);
+                    }
+                }
+            } else {
+                // Fallback for older browsers
+                try {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = suggestedName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    onClose();
+                } catch (err) {
+                    console.error('Error with fallback save method:', err);
+                    alert(`ファイルのダウンロード中にエラーが発生しました。`);
+                }
+            }
         } catch (err) {
             console.error("Failed to generate report:", err);
             const message = err instanceof Error ? err.message : '不明なエラーです。';
