@@ -80,31 +80,11 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
           const blob = new Blob([JSON.stringify(dataToStore, null, 2)], { type: 'application/json' });
           const date = new Date().toISOString().split('T')[0];
           const filename = `consulting_data_${userId}_${date}.json`;
-          const file = new File([blob], filename, { type: 'application/json' });
+          
+          // Removed the Web Share API logic as it causes "Permission Denied" errors in sandboxed environments.
+          // Defaulting to the reliable download-and-guide method for all users.
+          downloadFile(blob, filename);
 
-          // --- Plan B: Web Share API (for modern mobile browsers) ---
-          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-              try {
-                  await navigator.share({
-                      title: `キャリア相談データ (${nickname}さん)`,
-                      text: `${nickname}さんのキャリア相談データです。`,
-                      files: [file],
-                  });
-                  // Successfully shared
-              } catch (error) {
-                  // The user might have cancelled the share sheet. This is not an actual error.
-                  if (error instanceof DOMException && error.name === 'AbortError') {
-                      console.log('Share action was cancelled by the user.');
-                  } else {
-                      console.error('Error using Web Share API:', error);
-                      // If sharing fails for some reason, we can fall back to the download method.
-                      downloadFile(blob, filename);
-                  }
-              }
-          } else {
-            // --- Plan A: Fallback to download and guide (for desktop/older browsers) ---
-            downloadFile(blob, filename);
-          }
       } catch (err) {
           console.error('Error preparing data for export:', err);
           alert('データのエクスポート準備中にエラーが発生しました。');
