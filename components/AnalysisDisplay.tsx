@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { marked } from 'marked';
 import { AnalysisData, ChartDataPoint, ConsultationEntry, TrajectoryAnalysisData, SkillToDevelop, HiddenPotentialData, AnalysisStateItem } from '../types';
@@ -69,9 +68,8 @@ const MetricCard: React.FC<{ title: string; value: string | number | undefined; 
 );
 
 const ChartSection: React.FC<{ title: string; data: ChartDataPoint[] | undefined | null; icon: React.ReactNode }> = ({ title, data, icon }) => {
-    // FIX: Removed `isObject` which caused incorrect type narrowing. `d && ...` is safer.
     const chartData = (Array.isArray(data) ? data : [])
-        .filter(d => d && isValidString(d.label) && isValidNumber(d.value));
+        .filter(d => isObject(d) && isValidString(d.label) && isValidNumber(d.value));
         
     return (
         <div className="bg-white p-6 rounded-xl shadow-md">
@@ -102,9 +100,8 @@ const InfoListCard: React.FC<{ title: string; items: string[] | undefined | null
 };
 
 const ConsultationList: React.FC<{consultations: ConsultationEntry[] | undefined | null}> = ({consultations}) => {
-    // FIX: Removed `isObject` which caused incorrect type narrowing. `c && ...` is safer.
     const safeConsultations = (Array.isArray(consultations) ? consultations : [])
-        .filter(c => c && isValidString(c.dateTime) && isValidNumber(c.estimatedDurationMinutes));
+        .filter(c => isObject(c) && isValidString(c.dateTime) && isValidNumber(c.estimatedDurationMinutes));
         
     return (
     <div className="bg-white p-4 rounded-xl shadow-md"><div className="flex items-center gap-3 mb-3"><div className="text-slate-500"><CalendarIcon /></div><h3 className="text-md font-bold text-slate-800">相談期間</h3></div><ul className="space-y-1.5 max-h-40 overflow-y-auto pr-2">{safeConsultations.map((c, index) => <li key={index} className="flex justify-between items-center text-xs p-2 bg-slate-50 rounded-md"><div className="flex items-center gap-2"><span className="font-semibold text-slate-800">{c.dateTime}</span></div><span className="text-slate-600 font-medium">約{c.estimatedDurationMinutes}分</span></li>)}{safeConsultations.length === 0 && <p className="text-sm text-slate-500">相談履歴の詳細データがありません。</p>}</ul></div>
@@ -169,9 +166,8 @@ const HiddenPotentialSection: React.FC<{ state: AnalysisStateItem<HiddenPotentia
     const data = state.data;
     if (!data) return null;
     
-    // FIX: Removed `isObject` which caused incorrect type narrowing. `!!(s && ...)` is safer for the type guard.
     const hiddenSkills = (Array.isArray(data?.hiddenSkills) ? data.hiddenSkills : [])
-        .filter((s): s is SkillToDevelop => !!(s && isValidString(s.skill) && isValidString(s.reason)));
+        .filter((s): s is SkillToDevelop => isObject(s) && isValidString(s.skill) && isValidString(s.reason));
 
     if (hiddenSkills.length === 0) return null;
 

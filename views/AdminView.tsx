@@ -16,6 +16,7 @@ import DevLogModal from '../components/DevLogModal';
 import AnalysisDashboard from './AnalysisDashboard';
 import AnalysisDisplay from '../components/AnalysisDisplay';
 import SkillMatchingModal from '../components/SkillMatchingModal';
+import PasswordChangeModal from '../components/PasswordChangeModal';
 
 import TrashIcon from '../components/icons/TrashIcon';
 import ImportIcon from '../components/icons/ImportIcon';
@@ -36,37 +37,6 @@ const initialAnalysesState: AnalysesState = {
   hiddenPotential: { status: 'idle', data: null, error: null },
 };
 
-
-const PasswordManager: React.FC = () => {
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const result = setPassword(newPassword, currentPassword);
-        if (result.success) {
-            setMessage({ type: 'success', text: result.message });
-            setCurrentPassword('');
-            setNewPassword('');
-        } else {
-            setMessage({ type: 'error', text: result.message });
-        }
-        setTimeout(() => setMessage(null), 4000);
-    };
-
-    return (
-        <div className="bg-white p-4 rounded-lg shadow-md border border-slate-200">
-            <h3 className="font-bold text-slate-700 mb-2 flex items-center gap-2"><KeyIcon /> パスワード変更</h3>
-            <form onSubmit={handleSubmit} className="space-y-3">
-                <input type="password" placeholder="現在のパスワード" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="w-full p-2 border rounded-md" required />
-                <input type="password" placeholder="新しいパスワード" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full p-2 border rounded-md" required />
-                <button type="submit" className="w-full bg-slate-600 text-white px-3 py-2 rounded-md hover:bg-slate-700">変更</button>
-                {message && <p className={`text-sm mt-2 ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>{message.text}</p>}
-            </form>
-        </div>
-    );
-};
 
 const UserManagementPanel: React.FC<{
     allUsers: UserInfo[],
@@ -102,6 +72,7 @@ const AdminView: React.FC = () => {
     const [userToShare, setUserToShare] = useState<UserInfo | null>(null);
     const [isDevLogModalOpen, setIsDevLogModalOpen] = useState(false);
     const [isMatchingModalOpen, setIsMatchingModalOpen] = useState(false);
+    const [isPasswordChangeModalOpen, setIsPasswordChangeModalOpen] = useState(false);
 
     // --- NEW: Unified state management for all individual analyses ---
     const [analysesState, setAnalysesState] = useState<AnalysesState>(initialAnalysesState);
@@ -241,8 +212,7 @@ const AdminView: React.FC = () => {
     };
     
     const selectedUserConversations = selectedUserId ? (conversationsByUser[selectedUserId] || []).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) : [];
-    // FIX: Add explicit type annotation to the callback parameter `s` to resolve the error.
-    const isAnyAnalysisLoading = Object.values(analysesState).some((s: AnalysisStateItem<unknown>) => s.status === 'loading');
+    const isAnyAnalysisLoading = Object.values(analysesState).some(s => s.status === 'loading');
     
     // FIX: Refactored function to be type-safe by handling each analysis type explicitly, avoiding complex union/intersection type errors.
     const convertStateToCacheForReport = (state: AnalysesState): UserAnalysisCache => {
@@ -296,7 +266,12 @@ const AdminView: React.FC = () => {
                             <button onClick={() => setIsAddTextModalOpen(true)} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-emerald-500 text-white font-semibold rounded-lg shadow-sm hover:bg-emerald-600 transition-all"><PlusCircleIcon /> テキストから追加</button>
                         </div>
                         <UserManagementPanel allUsers={allUsers} selectedUserId={selectedUserId} onUserSelect={setSelectedUserId} conversationsByUser={conversationsByUser} />
-                        <PasswordManager />
+                        <button
+                            onClick={() => setIsPasswordChangeModalOpen(true)}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-600 text-white font-semibold rounded-lg shadow-sm hover:bg-slate-700 transition-all"
+                        >
+                            <KeyIcon /> パスワード変更
+                        </button>
                         <button onClick={handleClearAllData} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-sm hover:bg-red-700 transition-all"><TrashIcon /> 全データ削除</button>
                     </aside>
 
@@ -374,6 +349,10 @@ const AdminView: React.FC = () => {
                     }
                 }}
                 analysisState={analysesState.skillMatching}
+            />
+            <PasswordChangeModal 
+                isOpen={isPasswordChangeModalOpen} 
+                onClose={() => setIsPasswordChangeModalOpen(false)} 
             />
         </div>
     );

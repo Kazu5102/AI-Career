@@ -1,15 +1,14 @@
 
 
 import React, { useState } from 'react';
-// FIX: Removed non-existent 'IndividualAnalysisState' and added 'AnalysisStateItem' for the refactored state.
-import { StoredConversation, SkillMatchingResult, STORAGE_VERSION, StoredData, UserAnalysisCache, AnalysisStatus, AnalysisStateItem } from '../types';
+import { StoredConversation, SkillMatchingResult, STORAGE_VERSION, StoredData, AnalysisStateItem } from '../types';
 import ConversationDetailModal from './ConversationDetailModal';
 import SkillMatchingModal from './SkillMatchingModal';
 import { performSkillMatching } from '../services/index';
 import TargetIcon from './icons/TargetIcon';
 import PlayIcon from './icons/PlayIcon';
 import ExportIcon from './icons/ExportIcon';
-import ExportSuccessModal from './ExportSuccessModal';
+import ExportGuideModal from './ExportGuideModal';
 
 interface UserDashboardProps {
   conversations: StoredConversation[];
@@ -28,8 +27,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
     data: null,
     error: null,
   });
-  const [isExportSuccessModalOpen, setIsExportSuccessModalOpen] = useState(false);
-  // FIX: Added state to track the export process and provide user feedback.
+  const [isExportGuideModalOpen, setIsExportGuideModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const formatDate = (dateString: string) => {
@@ -81,26 +79,58 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
           };
           const blob = new Blob([JSON.stringify(dataToStore, null, 2)], { type: 'application/json' });
           const date = new Date().toISOString().split('T')[0];
-          const suggestedName = `consulting_data_${userId}_${date}.json`;
+          const filename = `consulting_data_${userId}_${date}.json`;
+          const file = new File([blob], filename, { type: 'application/json' });
 
-          // Proposal 1: Unify to a single, stable download method to prevent crashes.
-          // This method creates a temporary link and simulates a click.
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = suggestedName;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-          setIsExportSuccessModalOpen(true);
-
+          // --- Plan B: Web Share API (for modern mobile browsers) ---
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+              try {
+                  await navigator.share({
+                      title: `キャリア相談データ (${nickname}さん)`,
+                      text: `${nickname}さんのキャリア相談データです。`,
+                      files: [file],
+                  });
+                  // Successfully shared
+              } catch (error) {
+                  // The user might have cancelled the share sheet. This is not an actual error.
+                  if (error instanceof DOMException && error.name === 'AbortError') {
+                      console.log('Share action was cancelled by the user.');
+                  } else {
+                      console.error('Error using Web Share API:', error);
+                      // If sharing fails for some reason, we can fall back to the download method.
+                      downloadFile(blob, filename);
+                  }
+              }
+          } else {
+            // --- Plan A: Fallback to download and guide (for desktop/older browsers) ---
+            downloadFile(blob, filename);
+          }
       } catch (err) {
-          console.error('Error during file export:', err);
-          alert(`ファイルのダウンロード中にエラーが発生しました。`);
+          console.error('Error preparing data for export:', err);
+          alert('データのエクスポート準備中にエラーが発生しました。');
       } finally {
         setIsExporting(false);
       }
+  };
+
+  const downloadFile = (blob: Blob, filename: string) => {
+     try {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // Show the guide modal after initiating download
+        setIsExportGuideModalOpen(true);
+
+    } catch (err) {
+        console.error('Error with download method:', err);
+        alert(`ファイルのダウンロード中にエラーが発生しました。`);
+    }
   };
 
 
@@ -143,7 +173,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
                     {isExporting ? (
                         <>
                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                           <span>エクスポート中...</span>
+                           <span>処理中...</span>
                         </>
                     ) : (
                         <>
@@ -204,10 +234,12 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
         }}
         analysisState={skillMatchingState}
       />
-
-      <ExportSuccessModal 
-        isOpen={isExportSuccessModalOpen}
-        onClose={() => setIsExportSuccessModalOpen(false)}
+      
+      <ExportGuideModal
+          isOpen={isExportGuideModalOpen}
+          onClose={() => setIsExportGuideModalOpen(false)}
+          userId={userId}
+          nickname={nickname}
       />
     </>
   );

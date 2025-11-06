@@ -41,7 +41,7 @@ const DevLogModal: React.FC<DevLogModalProps> = ({ isOpen, onClose }) => {
     const date = new Date().toISOString().split('T')[0];
     const suggestedName = `dev_log_${date}.json`;
 
-    // Proposal 1: Unify to a single, stable download method to prevent crashes.
+    // Use the universal anchor-based download method.
     try {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -52,8 +52,8 @@ const DevLogModal: React.FC<DevLogModalProps> = ({ isOpen, onClose }) => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     } catch (err) {
-        console.error('Error during log export:', err);
-        alert(`ログのエクスポート中にエラーが発生しました。`);
+        console.error('Error with download method:', err);
+        alert(`ファイルのダウンロード中にエラーが発生しました。`);
     }
   };
   

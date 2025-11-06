@@ -61,7 +61,7 @@ interface ChatInputProps {
   onCancelEdit: () => void;
 }
 
-const MAX_TEXTAREA_HEIGHT = 128; // Set a max height of 128px (approx. 5-6 lines)
+const MAX_TEXTAREA_HEIGHT = 200; // Set a max height of 200px
 
 const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, initialText, onCancelEdit }) => {
   const [text, setText] = useState('');
@@ -215,7 +215,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSubmit, isLoading, isEditing, i
           onKeyDown={handleKeyDown}
           placeholder={placeholderText}
           disabled={isLoading || isListening}
-          className="flex-1 w-full px-4 py-3 bg-slate-100 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition duration-200 resize-none"
+          className="flex-1 w-full px-4 py-3 bg-slate-100 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition duration-200 resize-none overflow-y-hidden"
           rows={1}
           autoFocus
         />
