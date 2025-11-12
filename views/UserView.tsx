@@ -1,7 +1,8 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChatMessage, MessageAuthor, StoredConversation, StoredData, STORAGE_VERSION, AIType } from '../types';
-import { getStreamingChatResponse, generateSummary, reviseSummary } from '../services/index';
+import { getStreamingChatResponse, generateSummary, reviseSummary, generateSuggestions } from '../services/index';
 import { getUserById } from '../services/userService';
 import Header from '../components/Header';
 import ChatWindow from '../components/ChatWindow';
@@ -12,6 +13,7 @@ import AIAvatar from '../components/AIAvatar';
 import AvatarSelectionView from './AvatarSelectionView';
 import UserDashboard from '../components/UserDashboard';
 import ActionFooter from '../components/ActionFooter';
+import SuggestionChips from '../components/SuggestionChips'; // NEW
 import { ASSISTANTS } from '../config/aiAssistants';
 
 interface UserViewProps {
@@ -33,6 +35,7 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
   const [aiType, setAiType] = useState<AIType>('dog');
   const [aiAvatarKey, setAiAvatarKey] = useState<string>('');
   const [editingState, setEditingState] = useState<{ index: number; text: string } | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]); // NEW
 
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState<boolean>(false);
   const [summary, setSummary] = useState<string>('');
@@ -144,6 +147,7 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
   const handleSendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
 
+    setSuggestions([]); // Clear previous suggestions
     let currentMessages: ChatMessage[];
     
     if (editingState) {
@@ -158,6 +162,8 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
 
     setMessages(currentMessages);
     setIsLoading(true);
+
+    let finalMessages: ChatMessage[] = [];
 
     try {
       const stream = await getStreamingChatResponse(currentMessages, aiType, aiName);
@@ -179,6 +185,7 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
           setMessages(prev => {
               const newMessages = [...prev];
               newMessages[newMessages.length - 1] = { ...newMessages[newMessages.length - 1], text: aiResponse };
+              finalMessages = newMessages; // Keep track of the final message list
               return newMessages;
           });
       }
@@ -193,11 +200,36 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
         author: MessageAuthor.AI,
         text: "申し訳ありません、エラーが発生しました。もう一度お試しください。"
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => {
+          const updatedMessages = [...prev, errorMessage];
+          finalMessages = updatedMessages;
+          return updatedMessages;
+      });
     } finally {
       setIsLoading(false);
+      // After streaming is done, try to get suggestions
+      try {
+        if (finalMessages.length > 3) {
+            const response = await generateSuggestions(finalMessages);
+            if (response && Array.isArray(response.suggestions)) {
+                setSuggestions(response.suggestions);
+            }
+        }
+      } catch (suggestionError) {
+          console.error("Failed to generate suggestions:", suggestionError);
+          // Do not show an error to the user, just fail silently.
+          setSuggestions([]);
+      }
     }
   };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    // Clear suggestions immediately for better UX
+    setSuggestions([]);
+    // Send the suggestion as a new message
+    handleSendMessage(suggestion);
+  };
+
 
   const handleGenerateSummary = () => {
     setIsSummaryModalOpen(true);
@@ -372,6 +404,10 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
                   onEditMessage={handleStartEdit}
               />
               <div className="flex-shrink-0 flex flex-col bg-white border-t border-slate-200">
+                  <SuggestionChips
+                    suggestions={suggestions}
+                    onSuggestionClick={handleSuggestionClick}
+                  />
                   <ChatInput 
                       onSubmit={handleSendMessage} 
                       isLoading={isLoading}
@@ -404,7 +440,7 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
           onBackClick={handleBackToDashboard}
         />
       )}
-      <main className={`flex-1 flex flex-col items-center ${view === 'chatting' ? 'p-4 md:p-6 justify-center overflow-hidden' : 'p-0 sm:p-4 md:p-6 justify-start'}`}>
+      <main className={`flex-1 flex flex-col items-center ${view === 'chatting' ? 'p-4 md:p-6 overflow-hidden' : 'p-0 sm:p-4 md:p-6 justify-start'}`}>
         {renderContent()}
       </main>
       

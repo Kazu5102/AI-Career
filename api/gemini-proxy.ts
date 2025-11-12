@@ -1,4 +1,3 @@
-
 // ===================================================================================
 //  This is a serverless function that acts as a secure proxy to the Gemini API.
 //  It is specifically adapted for Vercel's Node.js runtime environment.
@@ -141,7 +140,8 @@ interface ProxyRequestBody {
     | 'analyzeTrajectory' // NEW
     | 'findHiddenPotential' // NEW
     | 'generateSummaryFromText'
-    | 'performSkillMatching';
+    | 'performSkillMatching'
+    | 'generateSuggestions'; // NEW
   payload: any;
 }
 
@@ -201,6 +201,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
             }
             case 'performSkillMatching': {
                 const result = await handlePerformSkillMatching(payload);
+                res.status(200).json(result);
+                break;
+            }
+            case 'generateSuggestions': {
+                const result = await handleGenerateSuggestions(payload);
                 res.status(200).json(result);
                 break;
             }
@@ -446,7 +451,7 @@ async function handleAnalyzeConversations(payload: { summaries: StoredConversati
 ### **分析の指示**
 
 1.  **分析ハイライト (keyTakeaways)**:
-    *   まず最初に、分析結果全体から最も重要で、行動に繋がりそうなインサイトを3つの箇条書きで簡潔に抽出してください。これはレポートの要点となります。
+    *   まず最初に、分析結果全体から最も重要で、行動に繋がりそうなインサイトを3つの箇条書きで抽出してください。これはレポートの要点となります。
 
 2.  **定量的分析**:
     *   **キーメトリクス**: 相談の総数と、最も頻繁に出現する業界トップ3を特定してください。
@@ -783,4 +788,59 @@ ${summariesText}
         throw new Error("スキルマッチングAPIが空の応答を返しました。");
     }
     return JSON.parse(responseText.trim()) as SkillMatchingResult;
+}
+
+async function handleGenerateSuggestions(payload: { messages: ChatMessage[] }): Promise<{ suggestions: string[] }> {
+    const { messages } = payload;
+    const formattedHistory = messages
+      .map(msg => `${msg.author === MessageAuthor.USER ? 'ユーザー' : 'AI'}: ${msg.text}`)
+      .join('\n');
+      
+    const suggestionSchema = {
+        type: Type.OBJECT,
+        properties: {
+            suggestions: {
+                type: Type.ARRAY,
+                description: "ユーザーへの質問の提案。適切なタイミングでなければ空配列にする。",
+                items: { type: Type.STRING }
+            }
+        },
+        required: ['suggestions']
+    };
+
+    const suggestionGenerationPrompt = `
+あなたは、キャリア相談の会話を分析し、ユーザーが次に何を話すべきか支援するAIアシスタントです。
+以下の対話履歴を分析してください。
+
+あなたのタスクは、**対話が自然な区切りを迎えているか、あるいはユーザーが次に何を話せば良いか迷いそうなタイミングか**を判断することです。
+
+もし、そのようなタイミングだと判断した場合、ユーザーが会話を深めるのに役立つ、簡潔で具体的な質問を3つ提案してください。
+提案する質問は、これまでの会話の流れに沿ったもので、ユーザーが自己分析を続けられるような内容にしてください。
+
+もし、まだ会話の途中であったり、AIが質問を投げかけた直後であるなど、提案するのに不適切なタイミングだと判断した場合は、何も提案しないでください。
+
+あなたの応答は、必ず以下のJSONスキーマに従ってください。提案がない場合は、suggestions配列を空にしてください。
+
+---
+【対話履歴】
+${formattedHistory}
+---
+`;
+
+    const response = await getAIClient()!.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: suggestionGenerationPrompt,
+        config: {
+            temperature: 0.7,
+            responseMimeType: "application/json",
+            responseSchema: suggestionSchema,
+        }
+    });
+
+    const responseText = response.text;
+    if (!responseText) {
+        // Return empty suggestions on empty response
+        return { suggestions: [] };
+    }
+    return JSON.parse(responseText.trim());
 }

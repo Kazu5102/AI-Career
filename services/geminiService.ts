@@ -152,3 +152,12 @@ export const performSkillMatching = async (conversations: StoredConversation[]):
         throw new Error(`スキルマッチングAPIの呼び出しに失敗しました: ${error instanceof Error ? error.message : String(error)}`);
     }
 };
+
+export const generateSuggestions = async (messages: ChatMessage[]): Promise<{ suggestions: string[] }> => {
+    try {
+        return await fetchFromProxy('generateSuggestions', { messages });
+    } catch (error) {
+        console.error("Error generating suggestions:", error);
+        throw new Error(`質問候補の生成に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+    }
+};

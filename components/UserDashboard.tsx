@@ -1,14 +1,15 @@
 
 
 import React, { useState } from 'react';
-import { StoredConversation, SkillMatchingResult, STORAGE_VERSION, StoredData, AnalysisStateItem } from '../types';
+// FIX: Removed non-existent 'IndividualAnalysisState' and added 'AnalysisStateItem' for the refactored state.
+import { StoredConversation, SkillMatchingResult, STORAGE_VERSION, StoredData, UserAnalysisCache, AnalysisStatus, AnalysisStateItem } from '../types';
 import ConversationDetailModal from './ConversationDetailModal';
 import SkillMatchingModal from './SkillMatchingModal';
 import { performSkillMatching } from '../services/index';
 import TargetIcon from './icons/TargetIcon';
 import PlayIcon from './icons/PlayIcon';
 import ExportIcon from './icons/ExportIcon';
-import ExportGuideModal from './ExportGuideModal';
+import ExportSuccessModal from './ExportSuccessModal';
 
 interface UserDashboardProps {
   conversations: StoredConversation[];
@@ -27,7 +28,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
     data: null,
     error: null,
   });
-  const [isExportGuideModalOpen, setIsExportGuideModalOpen] = useState(false);
+  const [isExportSuccessModalOpen, setIsExportSuccessModalOpen] = useState(false);
+  // FIX: Added state to track the export process and provide user feedback.
   const [isExporting, setIsExporting] = useState(false);
 
   const formatDate = (dateString: string) => {
@@ -79,38 +81,26 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
           };
           const blob = new Blob([JSON.stringify(dataToStore, null, 2)], { type: 'application/json' });
           const date = new Date().toISOString().split('T')[0];
-          const filename = `consulting_data_${userId}_${date}.json`;
-          
-          // Removed the Web Share API logic as it causes "Permission Denied" errors in sandboxed environments.
-          // Defaulting to the reliable download-and-guide method for all users.
-          downloadFile(blob, filename);
+          const suggestedName = `consulting_data_${userId}_${date}.json`;
+
+          // Proposal 1: Unify to a single, stable download method to prevent crashes.
+          // This method creates a temporary link and simulates a click.
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = suggestedName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          setIsExportSuccessModalOpen(true);
 
       } catch (err) {
-          console.error('Error preparing data for export:', err);
-          alert('データのエクスポート準備中にエラーが発生しました。');
+          console.error('Error during file export:', err);
+          alert(`ファイルのダウンロード中にエラーが発生しました。`);
       } finally {
         setIsExporting(false);
       }
-  };
-
-  const downloadFile = (blob: Blob, filename: string) => {
-     try {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        // Show the guide modal after initiating download
-        setIsExportGuideModalOpen(true);
-
-    } catch (err) {
-        console.error('Error with download method:', err);
-        alert(`ファイルのダウンロード中にエラーが発生しました。`);
-    }
   };
 
 
@@ -153,7 +143,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
                     {isExporting ? (
                         <>
                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                           <span>処理中...</span>
+                           <span>エクスポート中...</span>
                         </>
                     ) : (
                         <>
@@ -214,12 +204,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
         }}
         analysisState={skillMatchingState}
       />
-      
-      <ExportGuideModal
-          isOpen={isExportGuideModalOpen}
-          onClose={() => setIsExportGuideModalOpen(false)}
-          userId={userId}
-          nickname={nickname}
+
+      <ExportSuccessModal 
+        isOpen={isExportSuccessModalOpen}
+        onClose={() => setIsExportSuccessModalOpen(false)}
       />
     </>
   );

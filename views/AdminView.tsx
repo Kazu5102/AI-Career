@@ -1,7 +1,11 @@
 
+
+
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { StoredConversation, StoredData, UserInfo, STORAGE_VERSION, AnalysisType, AnalysesState, UserAnalysisCache } from '../types';
+import { StoredConversation, StoredData, UserInfo, STORAGE_VERSION, AnalysisType, AnalysesState, UserAnalysisCache, AnalysisStateItem } from '../types';
 import * as userService from '../services/userService';
+import { getStoredPassword, setPassword } from '../services/authService';
 import * as devLogService from '../services/devLogService';
 import { analyzeTrajectory, findHiddenPotential, performSkillMatching } from '../services/index';
 
@@ -12,7 +16,6 @@ import DevLogModal from '../components/DevLogModal';
 import AnalysisDashboard from './AnalysisDashboard';
 import AnalysisDisplay from '../components/AnalysisDisplay';
 import SkillMatchingModal from '../components/SkillMatchingModal';
-import PasswordChangeModal from '../components/PasswordChangeModal';
 
 import TrashIcon from '../components/icons/TrashIcon';
 import ImportIcon from '../components/icons/ImportIcon';
@@ -24,7 +27,6 @@ import LogIcon from '../components/icons/LogIcon';
 import TrajectoryIcon from '../components/icons/TrajectoryIcon';
 import BrainIcon from '../components/icons/BrainIcon';
 import TargetIcon from '../components/icons/TargetIcon';
-import ChevronDownIcon from '../components/icons/ChevronDownIcon';
 
 type AdminTab = 'user' | 'comprehensive';
 
@@ -34,6 +36,37 @@ const initialAnalysesState: AnalysesState = {
   hiddenPotential: { status: 'idle', data: null, error: null },
 };
 
+
+const PasswordManager: React.FC = () => {
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const result = setPassword(newPassword, currentPassword);
+        if (result.success) {
+            setMessage({ type: 'success', text: result.message });
+            setCurrentPassword('');
+            setNewPassword('');
+        } else {
+            setMessage({ type: 'error', text: result.message });
+        }
+        setTimeout(() => setMessage(null), 4000);
+    };
+
+    return (
+        <div className="bg-white p-4 rounded-lg shadow-md border border-slate-200">
+            <h3 className="font-bold text-slate-700 mb-2 flex items-center gap-2"><KeyIcon /> パスワード変更</h3>
+            <form onSubmit={handleSubmit} className="space-y-3">
+                <input type="password" placeholder="現在のパスワード" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="w-full p-2 border rounded-md" required />
+                <input type="password" placeholder="新しいパスワード" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full p-2 border rounded-md" required />
+                <button type="submit" className="w-full bg-slate-600 text-white px-3 py-2 rounded-md hover:bg-slate-700">変更</button>
+                {message && <p className={`text-sm mt-2 ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>{message.text}</p>}
+            </form>
+        </div>
+    );
+};
 
 const UserManagementPanel: React.FC<{
     allUsers: UserInfo[],
@@ -69,13 +102,11 @@ const AdminView: React.FC = () => {
     const [userToShare, setUserToShare] = useState<UserInfo | null>(null);
     const [isDevLogModalOpen, setIsDevLogModalOpen] = useState(false);
     const [isMatchingModalOpen, setIsMatchingModalOpen] = useState(false);
-    const [isPasswordChangeModalOpen, setIsPasswordChangeModalOpen] = useState(false);
-    const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
 
+    // --- NEW: Unified state management for all individual analyses ---
     const [analysesState, setAnalysesState] = useState<AnalysesState>(initialAnalysesState);
     
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const actionsMenuRef = useRef<HTMLDivElement>(null);
 
     const loadData = () => {
         const users = userService.getUsers();
@@ -99,20 +130,10 @@ const AdminView: React.FC = () => {
 
     useEffect(loadData, []);
     
+    // Reset analysis when user changes
     useEffect(() => {
         setAnalysesState(initialAnalysesState);
     }, [selectedUserId]);
-
-    // Close actions menu on outside click
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target as Node)) {
-                setIsActionsMenuOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const conversationsByUser = useMemo(() => {
         return allConversations.reduce<Record<string, StoredConversation[]>>((acc, conv) => {
@@ -220,8 +241,10 @@ const AdminView: React.FC = () => {
     };
     
     const selectedUserConversations = selectedUserId ? (conversationsByUser[selectedUserId] || []).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) : [];
-    const isAnyAnalysisLoading = Object.values(analysesState).some(s => s.status === 'loading');
+    // FIX: Add explicit type annotation to the callback parameter `s` to resolve the error.
+    const isAnyAnalysisLoading = Object.values(analysesState).some((s: AnalysisStateItem<unknown>) => s.status === 'loading');
     
+    // FIX: Refactored function to be type-safe by handling each analysis type explicitly, avoiding complex union/intersection type errors.
     const convertStateToCacheForReport = (state: AnalysesState): UserAnalysisCache => {
         const cache: UserAnalysisCache = {};
         
@@ -260,33 +283,21 @@ const AdminView: React.FC = () => {
                         <TabButton tabId="user">ユーザー別分析</TabButton>
                         <TabButton tabId="comprehensive">総合分析</TabButton>
                     </div>
+                    <button onClick={() => setIsDevLogModalOpen(true)} className="bg-purple-600 hover:bg-purple-700 p-2 rounded-lg text-sm transition-colors text-white shadow-md" title="開発ログ"><LogIcon /></button>
                 </div>
             </header>
 
             {activeTab === 'user' ? (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <aside className="lg:col-span-4 space-y-4">
-                       <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
-                            <h3 className="text-md font-bold text-slate-700">アクション</h3>
-                            <div className="flex gap-2">
-                                <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" className="hidden" />
-                                <button onClick={handleImportClick} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-sm hover:bg-sky-700 transition-all text-sm"><ImportIcon /> インポート</button>
-                                <button onClick={() => setIsAddTextModalOpen(true)} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-emerald-500 text-white font-semibold rounded-lg shadow-sm hover:bg-emerald-600 transition-all text-sm"><PlusCircleIcon /> テキスト追加</button>
-                            </div>
-                            <div className="relative" ref={actionsMenuRef}>
-                                <button onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-600 text-white font-semibold rounded-lg shadow-sm hover:bg-slate-700 transition-all text-sm">
-                                    その他アクション <ChevronDownIcon className="w-4 h-4" />
-                                </button>
-                                {isActionsMenuOpen && (
-                                    <div className="absolute top-full mt-2 w-full bg-white rounded-lg shadow-xl border z-10">
-                                        <button onClick={() => { setIsPasswordChangeModalOpen(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-100 rounded-t-lg"><KeyIcon /> パスワード変更</button>
-                                        <button onClick={() => { setIsDevLogModalOpen(true); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-100"><LogIcon /> 開発ログ表示</button>
-                                        <button onClick={() => { handleClearAllData(); setIsActionsMenuOpen(false); }} className="w-full text-left flex items-center gap-2 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-b-lg"><TrashIcon /> 全データ削除</button>
-                                    </div>
-                                )}
-                            </div>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" className="hidden" />
+                            <button onClick={handleImportClick} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-sky-600 text-white font-semibold rounded-lg shadow-sm hover:bg-sky-700 transition-all"><ImportIcon /> データインポート</button>
+                            <button onClick={() => setIsAddTextModalOpen(true)} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-emerald-500 text-white font-semibold rounded-lg shadow-sm hover:bg-emerald-600 transition-all"><PlusCircleIcon /> テキストから追加</button>
                         </div>
                         <UserManagementPanel allUsers={allUsers} selectedUserId={selectedUserId} onUserSelect={setSelectedUserId} conversationsByUser={conversationsByUser} />
+                        <PasswordManager />
+                        <button onClick={handleClearAllData} className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-sm hover:bg-red-700 transition-all"><TrashIcon /> 全データ削除</button>
                     </aside>
 
                     <main className="lg:col-span-8">
@@ -363,10 +374,6 @@ const AdminView: React.FC = () => {
                     }
                 }}
                 analysisState={analysesState.skillMatching}
-            />
-            <PasswordChangeModal 
-                isOpen={isPasswordChangeModalOpen} 
-                onClose={() => setIsPasswordChangeModalOpen(false)} 
             />
         </div>
     );

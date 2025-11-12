@@ -1,5 +1,4 @@
-
-import { ChatMessage, StoredConversation, AnalysisData, AIType, TrajectoryAnalysisData, HiddenPotentialData, SkillMatchingResult } from '../types';
+import { ChatMessage, StoredConversation, AnalysisData, AIType, TrajectoryAnalysisData, HiddenPotentialData, SkillMatchingResult, MessageAuthor } from '../types';
 
 // ===================================================================================
 //  This is a mock service for development and preview environments.
@@ -188,4 +187,20 @@ export const performSkillMatching = async (conversations: StoredConversation[]):
     console.log("[Mock] performSkillMatching called");
     await delay(3000);
     return sampleSkillMatchingResult;
+};
+
+export const generateSuggestions = async (messages: ChatMessage[]): Promise<{ suggestions: string[] }> => {
+    await delay(800);
+    const lastMessage = messages[messages.length - 1];
+    // Don't suggest if the AI just spoke (the last message is from the 'model')
+    if (lastMessage.author === MessageAuthor.AI) {
+        console.log("[Mock] No suggestions, AI spoke last.");
+        return { suggestions: [] };
+    }
+    console.log("[Mock] Generating suggestions.");
+    return { suggestions: [
+        '私の強みは何だと思いますか？',
+        '他にどんな職種が向いていますか？',
+        '今後のキャリアプランについてアドバイスはありますか？'
+    ]};
 };

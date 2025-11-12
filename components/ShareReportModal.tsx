@@ -51,29 +51,26 @@ const ShareReportModal: React.FC<ShareReportModalProps> = ({ isOpen, onClose, us
             const date = new Date().toISOString().split('T')[0];
             const suggestedName = `report_${userId}_${date}.html`;
 
-            // Use the universal anchor-based download method.
-            try {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = suggestedName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                onClose();
-            } catch (err) {
-                console.error('Error with download method:', err);
-                alert(`ファイルのダウンロード中にエラーが発生しました。`);
-            }
+            // Proposal 1: Unify to a single, stable download method to prevent crashes.
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = suggestedName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            onClose();
+
         } catch (err) {
-            console.error("Failed to generate report:", err);
+            console.error("Failed to generate and save report:", err);
             const message = err instanceof Error ? err.message : '不明なエラーです。';
-            setError(`レポートの生成に失敗しました: ${message}`);
+            setError(`レポートの生成または保存に失敗しました: ${message}`);
         } finally {
             setIsLoading(false);
         }
     };
+
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4" onClick={onClose}>

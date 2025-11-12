@@ -38,3 +38,5 @@ export const findHiddenPotential = (conversations: StoredConversation[], userId:
 export const generateSummaryFromText = (textToAnalyze: string): Promise<string> => service.generateSummaryFromText(textToAnalyze);
 
 export const performSkillMatching = (conversations: StoredConversation[]): Promise<SkillMatchingResult> => service.performSkillMatching(conversations);
+
+export const generateSuggestions = (messages: ChatMessage[]): Promise<{ suggestions: string[] }> => service.generateSuggestions(messages);
