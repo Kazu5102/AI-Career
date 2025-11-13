@@ -191,12 +191,10 @@ export const performSkillMatching = async (conversations: StoredConversation[]):
 
 export const generateSuggestions = async (messages: ChatMessage[]): Promise<{ suggestions: string[] }> => {
     await delay(800);
-    const lastMessage = messages[messages.length - 1];
-    // Don't suggest if the AI just spoke (the last message is from the 'model')
-    if (lastMessage.author === MessageAuthor.AI) {
-        console.log("[Mock] No suggestions, AI spoke last.");
-        return { suggestions: [] };
-    }
+    // The check `lastMessage.author === MessageAuthor.AI` was removed because it was causing a bug.
+    // The function is called *after* the AI responds, so the last message is always from the AI.
+    // In the mock, we now consistently return suggestions to allow for UI testing.
+    // The real AI service will determine when to return an empty array.
     console.log("[Mock] Generating suggestions.");
     return { suggestions: [
         '私の強みは何だと思いますか？',

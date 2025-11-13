@@ -209,9 +209,11 @@ const UserView: React.FC<UserViewProps> = ({ userId, onSwitchUser }) => {
       setIsLoading(false);
       // After streaming is done, try to get suggestions
       try {
-        if (finalMessages.length > 3) {
+        const userMessageCount = finalMessages.filter(m => m.author === MessageAuthor.USER).length;
+        // Generate suggestions after the user has sent at least 2 messages to build context.
+        if (userMessageCount >= 2) {
             const response = await generateSuggestions(finalMessages);
-            if (response && Array.isArray(response.suggestions)) {
+            if (response && Array.isArray(response.suggestions) && response.suggestions.length > 0) {
                 setSuggestions(response.suggestions);
             }
         }
