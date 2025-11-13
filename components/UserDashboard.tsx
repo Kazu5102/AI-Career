@@ -117,7 +117,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ conversations, onNewChat,
                     onClick={onSwitchUser}
                     className="flex-shrink-0 px-3 py-1.5 text-sm bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition-all"
                   >
-                    ユーザー選択に戻る
+                    相談者の選択
                 </button>
             </div>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-4">
