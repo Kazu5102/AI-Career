@@ -20,7 +20,7 @@ const AvatarSelectionView: React.FC<AvatarSelectionViewProps> = ({ onSelect }) =
     const rareDogAssistant = ASSISTANTS.find(a => a.id === 'dog_kotetsu_rare');
 
     let selectedDog = null;
-    const RARE_CHANCE = 0.1; // 10% chance to appear
+    const RARE_CHANCE = 1.0; // Set to 100% for verification. Original value is 0.1.
 
     if (rareDogAssistant && Math.random() < RARE_CHANCE) {
         selectedDog = rareDogAssistant;
