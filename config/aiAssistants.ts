@@ -2,7 +2,8 @@ import React from 'react';
 import { AIAssistant } from '../types';
 import { 
   FemaleAvatar1, MaleAvatar1, FemaleAvatar2, MaleAvatar2, 
-  ShibaAvatar, PoodleAvatar, CorgiAvatar, RetrieverAvatar 
+  ShibaAvatar, PoodleAvatar, CorgiAvatar, RetrieverAvatar,
+  KotetsuAvatar
 } from '../components/AIAvatar';
 
 export const ASSISTANTS: AIAssistant[] = [
@@ -79,5 +80,14 @@ export const ASSISTANTS: AIAssistant[] = [
     description: "賢く穏やかに。あなたのどんな話も優しく受け止めます。",
     // FIX: Replaced JSX syntax with React.createElement to resolve TypeScript error in a .ts file. JSX syntax is only allowed in .tsx files.
     avatarComponent: React.createElement(RetrieverAvatar)
+  },
+  // --- NEW RARE CHARACTER ---
+  {
+    id: 'dog_kotetsu_rare',
+    type: 'dog',
+    title: "キャリア相談わんこ (虎徹/チワプー/レア)",
+    nameOptions: ['虎徹'],
+    description: "ごく稀に現れる実写のチワプーのわんこ。出会えたあなたはラッキーかも？",
+    avatarComponent: React.createElement(KotetsuAvatar)
   },
 ];
