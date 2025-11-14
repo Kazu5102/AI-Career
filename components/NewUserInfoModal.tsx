@@ -33,7 +33,7 @@ const NewUserInfoModal: React.FC<NewUserInfoModalProps> = ({ isOpen, user, onCon
                 </div>
             </div>
             
-            <p className="text-sm text-slate-600 bg-amber-100 text-amber-800 p-3 rounded-lg">
+            <p className="text-sm text-slate-600 bg-amber-100 text-amber-800 p-3 rounded-lg text-left">
               <strong>重要:</strong> このニックネームとPINコードは、次回以降のログインで必要になります。忘れないようにメモしてください。
             </p>
         </div>
